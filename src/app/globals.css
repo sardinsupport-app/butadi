@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --dikbud-navy: #0f2c59;
+  --dikbud-blue: #1e40af;
+  --dikbud-gold: #f59e0b;
+  --dikbud-tosca: #0d9488;
+}
+
+body {
+  background-color: #f8fafc;
+  color: #0f172a;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+/* Aksen Watermark Motif Tenun Khas Kendari / Sulawesi Tenggara */
+.tenun-header-pattern {
+  background-image: radial-gradient(
+      rgba(245, 158, 11, 0.12) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      135deg,
+      rgba(15, 44, 89, 0.98) 0%,
+      rgba(30, 64, 175, 0.95) 100%
+    );
+  background-size: 20px 20px, 100% 100%;
+}
+
+.tenun-card-watermark {
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(15, 44, 89, 0.025) 0px,
+    rgba(15, 44, 89, 0.025) 2px,
+    transparent 2px,
+    transparent 10px
+  );
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
