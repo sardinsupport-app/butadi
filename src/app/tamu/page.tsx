@@ -467,7 +467,7 @@ function PortalTamuContent() {
 
           {/* Web-Camera Selfie Capture */}
           <div className="space-y-3 pt-2 border-t border-slate-100">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
                 <label className="block text-xs font-bold text-slate-700">
                   Swafoto (Selfie) Tamu &mdash; Validasi Keamanan
@@ -480,7 +480,7 @@ function PortalTamuContent() {
                 <button
                   type="button"
                   onClick={startCamera}
-                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#0F2C59] hover:bg-[#1E40AF] text-white text-xs font-bold transition"
+                  className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#0F2C59] hover:bg-[#1E40AF] text-white text-xs font-bold transition shrink-0"
                 >
                   <Camera className="w-4 h-4 text-[#F59E0B]" />
                   <span>Buka Kamera Selfie</span>
@@ -612,14 +612,14 @@ function PortalTamuContent() {
           </div>
 
           {!currentTicket ? (
-            <div className="bg-white rounded-3xl p-10 text-center border border-slate-200 space-y-3">
+            <div className="bg-white rounded-3xl p-8 sm:p-10 text-center border border-slate-200 space-y-3">
               <QrCode className="w-12 h-12 text-slate-300 mx-auto" />
               <h3 className="font-bold text-base text-slate-800">
                 Pilih atau Masukkan Kode Tiket Kunjungan
               </h3>
               <p className="text-xs text-slate-500 max-w-md mx-auto">
-                Klik salah satu nomor tiket contoh di atas atau isi formulir
-                buku tamu untuk mendapatkan E-Ticket baru.
+                Ketikkan kode tiket kunjungan Anda pada kotak pencarian di atas,
+                atau lakukan pendaftaran pada formulir buku tamu untuk mendapatkan E-Ticket baru.
               </p>
             </div>
           ) : (

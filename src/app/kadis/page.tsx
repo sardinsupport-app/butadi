@@ -527,8 +527,8 @@ function PortalKadisDashboard({ onLock }: { onLock: () => void }) {
               <Clock className="w-4 h-4 text-[#F59E0B]" />
               <span>Tren Jam Sibuk Pelayanan (WITA):</span>
             </p>
-            <div className="grid grid-cols-4 gap-2">
-              {jamSibukData.slice(0, 4).map((h) => (
+            <div className="grid grid-cols-4 sm:grid-cols-8 gap-1.5">
+              {jamSibukData.map((h) => (
                 <div
                   key={h.jam}
                   className="bg-slate-50 p-2 rounded-xl border border-slate-200 text-center"
@@ -537,7 +537,7 @@ function PortalKadisDashboard({ onLock }: { onLock: () => void }) {
                     {h.jam}
                   </p>
                   <p className="text-sm font-extrabold text-[#0F2C59]">
-                    {h.jumlah} tamu
+                    {h.jumlah}
                   </p>
                 </div>
               ))}

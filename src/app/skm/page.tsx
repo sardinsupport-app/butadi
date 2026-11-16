@@ -78,13 +78,8 @@ function PortalSkmContent() {
     e.preventDefault();
     setSubmitting(true);
 
-    const fallbackKunjunganId =
-      selectedKunjunganId ||
-      kunjunganList[0]?.id ||
-      "22222222-2222-4222-8222-222222222201";
-
     await submitSkm({
-      kunjungan_id: fallbackKunjunganId,
+      kunjungan_id: selectedKunjunganId || null,
       bidang_id: selectedBidangId,
       u1_persyaratan: scores.u1_persyaratan,
       u2_prosedur: scores.u2_prosedur,
@@ -127,11 +122,13 @@ function PortalSkmContent() {
           </p>
           <div className="flex items-center justify-center gap-3 mt-1">
             <span className="text-4xl font-extrabold text-white">
-              {overallIkm.nilaiIkm || "94.44"}
+              {overallIkm.totalResponden > 0 ? overallIkm.nilaiIkm : "-"}
             </span>
             <div className="text-left">
               <span className="inline-block px-2.5 py-0.5 rounded-full bg-emerald-400 text-slate-950 text-xs font-extrabold">
-                Mutu {overallIkm.mutuPelayanan}
+                {overallIkm.totalResponden > 0
+                  ? `Mutu ${overallIkm.mutuPelayanan}`
+                  : "Mutu -"}
               </span>
               <p className="text-xs text-teal-200 font-bold mt-0.5">
                 {overallIkm.kinerjaUnit}
@@ -139,7 +136,9 @@ function PortalSkmContent() {
             </div>
           </div>
           <p className="text-[11px] text-blue-200 mt-2">
-            Berdasarkan {overallIkm.totalResponden} responden terverifikasi
+            {overallIkm.totalResponden > 0
+              ? `Berdasarkan ${overallIkm.totalResponden} responden terverifikasi`
+              : "Belum ada survei yang masuk"}
           </p>
         </div>
       </div>
@@ -268,7 +267,7 @@ function PortalSkmContent() {
 
           {/* 9 Unsur Pelayanan Interactive Cards */}
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <h3 className="font-extrabold text-base text-[#0F2C59] flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-[#F59E0B]" />
                 <span>
@@ -290,7 +289,7 @@ function PortalSkmContent() {
                     u9_pengaduan: 4,
                   })
                 }
-                className="text-xs font-bold text-teal-700 hover:underline"
+                className="text-xs font-bold text-teal-700 hover:underline text-left sm:text-right"
               >
                 Pilih Sangat Baik Semua (4 Bintang)
               </button>

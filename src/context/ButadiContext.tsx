@@ -46,7 +46,7 @@ interface CreateKunjunganInput {
 }
 
 interface SubmitSkmInput {
-  kunjungan_id: string;
+  kunjungan_id?: string | null;
   bidang_id: string;
   u1_persyaratan: number;
   u2_prosedur: number;
@@ -100,9 +100,9 @@ interface ButadiContextValue {
 
 const ButadiContext = createContext<ButadiContextValue | undefined>(undefined);
 
-const LS_BIDANG = "butadi_data_bidang_v1";
-const LS_KUNJUNGAN = "butadi_data_kunjungan_v1";
-const LS_SKM = "butadi_data_skm_v1";
+const LS_BIDANG = "butadi_data_bidang_v2";
+const LS_KUNJUNGAN = "butadi_data_kunjungan_v2";
+const LS_SKM = "butadi_data_skm_v2";
 
 function generateUUID(): string {
   if (typeof crypto !== "undefined" && crypto.randomUUID) {
@@ -648,7 +648,7 @@ export function ButadiProvider({ children }: { children: React.ReactNode }) {
     async (input: SubmitSkmInput): Promise<SkmResponse> => {
       const newSkm: SkmResponse = {
         id: generateUUID(),
-        kunjungan_id: input.kunjungan_id,
+        kunjungan_id: input.kunjungan_id || null,
         bidang_id: input.bidang_id,
         u1_persyaratan: input.u1_persyaratan,
         u2_prosedur: input.u2_prosedur,
@@ -665,11 +665,19 @@ export function ButadiProvider({ children }: { children: React.ReactNode }) {
 
       const supabase = getSupabaseClient();
       if (supabase && isSupabaseConnected) {
-        const { data, error } = await supabase
-          .from("skm_responses")
-          .upsert([newSkm], { onConflict: "kunjungan_id" })
-          .select("*")
-          .single();
+        const query = input.kunjungan_id
+          ? supabase
+              .from("skm_responses")
+              .upsert([newSkm], { onConflict: "kunjungan_id" })
+              .select("*")
+              .single()
+          : supabase
+              .from("skm_responses")
+              .insert([newSkm])
+              .select("*")
+              .single();
+
+        const { data, error } = await query;
 
         if (!error && data) {
           const saved = data as SkmResponse;

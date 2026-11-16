@@ -175,10 +175,10 @@ export default function PortalKioskPage() {
             </div>
             <div className="bg-white/10 rounded-2xl p-3">
               <p className="text-[10px] uppercase text-blue-200 font-bold">
-                IKM ({ikm.mutuPelayanan})
+                {ikm.totalResponden > 0 ? `IKM (${ikm.mutuPelayanan})` : "IKM"}
               </p>
               <p className="text-2xl font-extrabold text-emerald-300 mt-0.5">
-                {ikm.nilaiIkm || "94.44"}
+                {ikm.totalResponden > 0 ? ikm.nilaiIkm : "-"}
               </p>
             </div>
           </div>

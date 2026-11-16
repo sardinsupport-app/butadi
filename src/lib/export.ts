@@ -152,7 +152,7 @@ export function exportLaporanToExcel(
   }));
 
   const sheetSkm = skmList.map((s, idx) => {
-    const k = kunjunganMap.get(s.kunjungan_id);
+    const k = s.kunjungan_id ? kunjunganMap.get(s.kunjungan_id) : undefined;
     const avg =
       (s.u1_persyaratan +
         s.u2_prosedur +

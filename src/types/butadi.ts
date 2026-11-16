@@ -50,7 +50,7 @@ export interface Kunjungan {
 
 export interface SkmResponse {
   id: string;
-  kunjungan_id: string;
+  kunjungan_id: string | null;
   bidang_id: string;
   u1_persyaratan: number;
   u2_prosedur: number;

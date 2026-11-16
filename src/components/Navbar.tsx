@@ -109,7 +109,7 @@ export function Navbar() {
                       Dikbud Kendari
                     </span>
                   </div>
-                  <p className="text-xs text-blue-200 leading-snug">
+                  <p className="text-xs text-blue-200 leading-snug line-clamp-1 sm:line-clamp-none">
                     Buku Tamu Digital &amp; E-Receptionist Dinas Pendidikan dan
                     Kebudayaan Kota Kendari
                   </p>
@@ -137,7 +137,7 @@ export function Navbar() {
             </div>
 
             {/* Public Menu Navigation */}
-            <nav className="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 no-scrollbar">
+            <nav className="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 no-scrollbar touch-pan-x">
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const active =

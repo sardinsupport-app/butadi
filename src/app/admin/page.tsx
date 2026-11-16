@@ -400,7 +400,7 @@ function PortalAdminDashboard({ onLock }: { onLock: () => void }) {
 
           {/* Live Queue Table */}
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-            <div className="overflow-x-auto">
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-[#0F2C59] text-white text-[11px] uppercase tracking-wider">
@@ -622,6 +622,165 @@ function PortalAdminDashboard({ onLock }: { onLock: () => void }) {
                   )}
                 </tbody>
               </table>
+            </div>
+
+            {/* Mobile Card List View (Super Responsive di Layar HP) */}
+            <div className="block md:hidden divide-y divide-slate-100">
+              {filteredKunjungan.length === 0 ? (
+                <div className="p-8 text-center text-slate-400 text-xs">
+                  Tidak ada data kunjungan yang sesuai dengan filter.
+                </div>
+              ) : (
+                filteredKunjungan.map((k) => {
+                  const bidang = bidangMap.get(k.bidang_id);
+                  const hasSkm = skmKunjunganSet.has(k.id);
+                  const badgeClass =
+                    k.status === "Menunggu"
+                      ? "bg-amber-100 text-amber-800 border-amber-300"
+                      : k.status === "Dilayani"
+                      ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                      : k.status === "Disposisi"
+                      ? "bg-indigo-100 text-indigo-800 border-indigo-300"
+                      : k.status === "Selesai"
+                      ? "bg-teal-100 text-teal-800 border-teal-300"
+                      : "bg-rose-100 text-rose-800 border-rose-300";
+
+                  return (
+                    <div key={k.id} className="p-4 space-y-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="px-2.5 py-1 rounded-lg bg-[#0F2C59] text-[#F59E0B] font-mono font-extrabold text-xs">
+                          {k.kode_tiket}
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${badgeClass}`}
+                          >
+                            {k.status}
+                          </span>
+                          {k.status === "Selesai" &&
+                            (hasSkm ? (
+                              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                                SKM Terisi
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                                Menunggu SKM
+                              </span>
+                            ))}
+                        </div>
+                      </div>
+
+                      <div className="flex items-start gap-3">
+                        {k.foto_url ? (
+                          <img
+                            src={k.foto_url}
+                            alt={k.nama_tamu}
+                            className="w-12 h-12 rounded-xl object-cover border border-slate-300 shrink-0"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 rounded-xl bg-blue-100 text-[#1E40AF] font-extrabold text-sm flex items-center justify-center shrink-0">
+                            {k.nama_tamu.charAt(0)}
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-extrabold text-slate-900 text-sm truncate">
+                            {k.nama_tamu}
+                          </p>
+                          <p className="text-xs text-slate-600 truncate">
+                            {k.instansi_asal}
+                          </p>
+                          <div className="flex flex-wrap items-center gap-1 mt-1">
+                            <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-mono text-[9px]">
+                              {k.nik_nip}
+                            </span>
+                            <span className="px-1.5 py-0.5 rounded bg-blue-50 text-[#1E40AF] font-semibold text-[9px]">
+                              {k.kategori_tamu}
+                            </span>
+                            <span className="text-[10px] text-slate-400">
+                              &bull;{" "}
+                              {new Date(k.waktu_masuk).toLocaleTimeString(
+                                "id-ID",
+                                { hour: "2-digit", minute: "2-digit" }
+                              )}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-xs space-y-1">
+                        <p className="text-[11px] text-slate-500">
+                          Tujuan:{" "}
+                          <strong className="text-[#0F2C59]">
+                            {bidang?.nama_bidang || "-"}
+                          </strong>{" "}
+                          ({bidang?.lokasi_ruangan || "-"})
+                        </p>
+                        <p className="text-slate-700">
+                          <strong>Keperluan:</strong> {k.keperluan}
+                        </p>
+                        {k.catatan_disposisi_kadis && (
+                          <p className="text-indigo-900 bg-indigo-50 p-1.5 rounded-lg border border-indigo-200 text-[11px]">
+                            <strong>Disposisi:</strong>{" "}
+                            {k.catatan_disposisi_kadis}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Mobile Actions */}
+                      <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                        {(k.status === "Menunggu" ||
+                          k.status === "Disposisi") && (
+                          <button
+                            type="button"
+                            onClick={() => handleLayaniTamu(k)}
+                            className="flex-1 inline-flex items-center justify-center gap-1 py-2 px-3 rounded-xl bg-[#1E40AF] hover:bg-[#0F2C59] text-white font-bold text-xs shadow-sm"
+                          >
+                            <Play className="w-3.5 h-3.5" />
+                            <span>Layani</span>
+                          </button>
+                        )}
+
+                        {k.status !== "Selesai" && k.status !== "Batal" && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => handleOpenDisposisi(k)}
+                              className="inline-flex items-center justify-center gap-1 py-2 px-3 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 font-bold text-xs"
+                            >
+                              <ArrowRightLeft className="w-3.5 h-3.5" />
+                              <span>Disposisi</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleSelesaiKunjungan(k)}
+                              className="flex-1 inline-flex items-center justify-center gap-1 py-2 px-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs shadow-sm"
+                            >
+                              <UserCheck className="w-3.5 h-3.5" />
+                              <span>Selesai &amp; SKM</span>
+                            </button>
+                          </>
+                        )}
+
+                        <a
+                          href={getDirectWaUrl(
+                            k.no_wa,
+                            k.status === "Selesai"
+                              ? buildSkmWaMessage(k, bidang)
+                              : buildTicketWaMessage(k, bidang)
+                          )}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center justify-center gap-1 py-2 px-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold text-xs"
+                        >
+                          <MessageSquareShare className="w-3.5 h-3.5" />
+                          <span>WA</span>
+                        </a>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
         </div>

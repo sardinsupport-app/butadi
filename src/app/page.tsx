@@ -96,10 +96,18 @@ export default function MainMenuHomePage() {
                 Indeks Kepuasan (IKM)
               </p>
               <p className="text-xl sm:text-2xl font-extrabold text-amber-300 mt-0.5">
-                {ikm.nilaiIkm || "94.44"}{" "}
-                <span className="text-xs font-bold">
-                  (Mutu {ikm.mutuPelayanan})
-                </span>
+                {ikm.totalResponden > 0 ? (
+                  <>
+                    {ikm.nilaiIkm}{" "}
+                    <span className="text-xs font-bold">
+                      (Mutu {ikm.mutuPelayanan})
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-sm font-bold text-blue-200">
+                    Belum Ada Data
+                  </span>
+                )}
               </p>
             </div>
           </div>
