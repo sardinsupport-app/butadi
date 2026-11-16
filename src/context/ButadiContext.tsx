@@ -79,6 +79,7 @@ interface ButadiContextValue {
     status: StatusKunjungan,
     extra?: { bidang_id?: string; catatan_disposisi_kadis?: string | null }
   ) => Promise<Kunjungan | null>;
+  deleteKunjungan: (id: string) => Promise<boolean>;
   findVisitorByNikNip: (
     nikNip: string
   ) => Promise<Pick<
@@ -512,6 +513,54 @@ export function ButadiProvider({ children }: { children: React.ReactNode }) {
     [kunjunganList, isSupabaseConnected, persistLocal, broadcastSync, pushToast]
   );
 
+  const deleteKunjungan = useCallback(
+    async (id: string): Promise<boolean> => {
+      const target = kunjunganList.find((k) => k.id === id);
+      const supabase = getSupabaseClient();
+      if (supabase && isSupabaseConnected) {
+        try {
+          await supabase.from("skm_responses").delete().eq("kunjungan_id", id);
+          const { error } = await supabase.from("kunjungan").delete().eq("id", id);
+          if (error) {
+            pushToast("Gagal Menghapus Data", error.message, "warning");
+            return false;
+          }
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : "Terjadi kesalahan";
+          pushToast("Gagal Menghapus Data", msg, "warning");
+          return false;
+        }
+      }
+
+      setKunjunganList((prev) => {
+        const next = prev.filter((k) => k.id !== id);
+        persistLocal(undefined, next, undefined);
+        return next;
+      });
+
+      setSkmList((prev) => {
+        const next = prev.filter((s) => s.kunjungan_id !== id);
+        persistLocal(undefined, undefined, next);
+        return next;
+      });
+
+      pushToast(
+        "Data Kunjungan Berhasil Dihapus",
+        target
+          ? `Data ${target.nama_tamu} (${target.kode_tiket}) telah dihapus dari sistem.`
+          : "Data kunjungan telah dihapus.",
+        "info"
+      );
+      broadcastSync(
+        "Data Kunjungan Dihapus",
+        target ? `Tiket ${target.kode_tiket} telah dihapus` : "Data kunjungan dihapus",
+        false
+      );
+      return true;
+    },
+    [kunjunganList, isSupabaseConnected, persistLocal, broadcastSync, pushToast]
+  );
+
   const findVisitorByNikNip = useCallback(
     async (
       nikNip: string
@@ -806,6 +855,7 @@ export function ButadiProvider({ children }: { children: React.ReactNode }) {
         refreshData,
         createKunjungan,
         updateStatusKunjungan,
+        deleteKunjungan,
         findVisitorByNikNip,
         updateStatusPejabat,
         saveBidang,

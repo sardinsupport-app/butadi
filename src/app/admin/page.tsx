@@ -46,6 +46,7 @@ function PortalAdminDashboard({ onLock }: { onLock: () => void }) {
     kunjunganList,
     skmList,
     updateStatusKunjungan,
+    deleteKunjungan,
     updateStatusPejabat,
     saveBidang,
     deleteBidang,
@@ -58,6 +59,10 @@ function PortalAdminDashboard({ onLock }: { onLock: () => void }) {
     useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [dateFilter, setDateFilter] = useState<string>("");
+
+  // Delete Visitor Modal state
+  const [deletingVisitor, setDeletingVisitor] = useState<Kunjungan | null>(null);
+  const [isDeletingVisitor, setIsDeletingVisitor] = useState<boolean>(false);
 
   // Disposisi Modal state
   const [disposisiTarget, setDisposisiTarget] = useState<Kunjungan | null>(
@@ -142,6 +147,14 @@ function PortalAdminDashboard({ onLock }: { onLock: () => void }) {
 
   const handleLayaniTamu = async (k: Kunjungan) => {
     await updateStatusKunjungan(k.id, "Dilayani");
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deletingVisitor) return;
+    setIsDeletingVisitor(true);
+    await deleteKunjungan(deletingVisitor.id);
+    setIsDeletingVisitor(false);
+    setDeletingVisitor(null);
   };
 
   const handleSelesaiKunjungan = async (k: Kunjungan) => {
@@ -614,6 +627,17 @@ function PortalAdminDashboard({ onLock }: { onLock: () => void }) {
                                 <MessageSquareShare className="w-3.5 h-3.5" />
                                 <span>WA</span>
                               </a>
+
+                              {/* Tombol Hapus Data Tamu */}
+                              <button
+                                type="button"
+                                onClick={() => setDeletingVisitor(k)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs transition"
+                                title="Hapus Data Tamu"
+                              >
+                                <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                                <span className="hidden xl:inline">Hapus</span>
+                              </button>
                             </div>
                           </td>
                         </tr>
@@ -776,6 +800,16 @@ function PortalAdminDashboard({ onLock }: { onLock: () => void }) {
                           <MessageSquareShare className="w-3.5 h-3.5" />
                           <span>WA</span>
                         </a>
+
+                        <button
+                          type="button"
+                          onClick={() => setDeletingVisitor(k)}
+                          className="inline-flex items-center justify-center gap-1 py-2 px-3 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs"
+                          title="Hapus Data Tamu"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                          <span>Hapus</span>
+                        </button>
                       </div>
                     </div>
                   );
@@ -1191,6 +1225,70 @@ function PortalAdminDashboard({ onLock }: { onLock: () => void }) {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Konfirmasi Hapus Data Tamu */}
+      {deletingVisitor && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border-2 border-rose-200 animate-in fade-in zoom-in-95 space-y-4">
+            <div className="flex items-start gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+                <Trash2 className="w-6 h-6" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-base font-extrabold text-slate-900">
+                  Hapus Data Kunjungan Tamu?
+                </h3>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Tindakan ini akan menghapus data kunjungan dan hasil survei SKM terkait secara permanen dari sistem.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 text-xs space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500 font-medium">Nomor Tiket:</span>
+                <span className="font-mono font-extrabold text-[#0F2C59] bg-white px-2 py-0.5 rounded border border-slate-200">
+                  {deletingVisitor.kode_tiket}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500 font-medium">Nama Tamu:</span>
+                <span className="font-bold text-slate-900">
+                  {deletingVisitor.nama_tamu}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500 font-medium">Instansi / Asal:</span>
+                <span className="text-slate-700">{deletingVisitor.instansi_asal}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500 font-medium">Status:</span>
+                <span className="font-bold text-slate-800">{deletingVisitor.status}</span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                disabled={isDeletingVisitor}
+                onClick={() => setDeletingVisitor(null)}
+                className="px-4 py-2.5 rounded-xl border border-slate-300 hover:bg-slate-100 text-xs font-bold text-slate-700 transition"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                disabled={isDeletingVisitor}
+                onClick={handleConfirmDelete}
+                className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-extrabold shadow-sm transition disabled:opacity-50"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>{isDeletingVisitor ? "Menghapus..." : "Ya, Hapus Data"}</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
