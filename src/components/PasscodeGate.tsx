@@ -19,6 +19,9 @@ interface PasscodeGateProps {
   portalBadge: string;
   portalTitle: string;
   portalSubtitle: string;
+  backHref?: string;
+  backLabel?: string;
+  onUnlocked?: () => void;
   children: (onLock: () => void) => React.ReactNode;
 }
 
@@ -28,6 +31,9 @@ export function PasscodeGate({
   portalBadge,
   portalTitle,
   portalSubtitle,
+  backHref = "/",
+  backLabel = "Kembali ke Layar Menu Utama",
+  onUnlocked,
   children,
 }: PasscodeGateProps) {
   const [isUnlocked, setIsUnlocked] = useState(false);
@@ -55,6 +61,7 @@ export function PasscodeGate({
       setErrorMsg(null);
       setPasscodeInput("");
       setIsUnlocked(true);
+      onUnlocked?.();
     } else {
       setErrorMsg("Passcode yang Anda masukkan tidak sesuai. Silakan coba lagi.");
     }
@@ -155,11 +162,11 @@ export function PasscodeGate({
 
           <div className="pt-2 border-t border-slate-100 text-center">
             <Link
-              href="/"
+              href={backHref}
               className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-[#0F2C59] transition"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Kembali ke Layar Menu Utama</span>
+              <span>{backLabel}</span>
             </Link>
           </div>
         </form>

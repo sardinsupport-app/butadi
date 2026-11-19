@@ -2171,6 +2171,11 @@ export default function PortalAdminPage() {
       portalBadge="Otorisasi Petugas Admin"
       portalTitle="Portal Admin & Resepsionis"
       portalSubtitle="Halaman khusus Petugas Front Office (Lobi) dan Staf Administrasi Bidang Dikbud Kota Kendari."
+      onUnlocked={() => {
+        if (typeof window !== "undefined") {
+          sessionStorage.removeItem("butadi_isolated_school_npsn");
+        }
+      }}
     >
       {(onLock) => <PortalAdminDashboard onLock={onLock} />}
     </PasscodeGate>

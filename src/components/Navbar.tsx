@@ -1,8 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Bell,
   BellOff,
@@ -11,10 +11,11 @@ import {
   Lock,
   Monitor,
   QrCode,
-  School,
   X,
 } from "lucide-react";
 import { useButadi } from "@/context/ButadiContext";
+
+export const ISOLATED_SCHOOL_SESSION_KEY = "butadi_isolated_school_npsn";
 
 export function KendariLogo({ className = "w-10 h-10" }: { className?: string }) {
   return (
@@ -63,61 +64,134 @@ export function KendariLogo({ className = "w-10 h-10" }: { className?: string })
 
 export function Navbar() {
   const pathname = usePathname();
-  const { soundEnabled, setSoundEnabled, toasts, dismissToast } = useButadi();
+  const router = useRouter();
+  const {
+    sekolahList,
+    soundEnabled,
+    setSoundEnabled,
+    toasts,
+    dismissToast,
+  } = useButadi();
 
-  // Hanya menampilkan menu publik: Menu Utama, Portal Tamu, Portal Lobi Kiosk, dan Portal SKM
-  const navItems = [
+  const [lockedSchoolNpsn, setLockedSchoolNpsn] = useState<string | null>(null);
+
+  // Deteksi apakah URL saat ini berada di dalam portal sekolah spesifik (/sekolah/[npsn])
+  const schoolMatch = pathname?.match(/^\/sekolah\/([^/]+)/);
+  const urlSchoolNpsn = schoolMatch ? schoolMatch[1] : null;
+  const isDinasProtectedRoute =
+    pathname?.startsWith("/admin") || pathname?.startsWith("/kadis");
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const existingLocked = sessionStorage.getItem(ISOLATED_SCHOOL_SESSION_KEY);
+
+    // Jika sesi sudah terkunci pada satu sekolah tertentu:
+    if (existingLocked) {
+      setLockedSchoolNpsn(existingLocked);
+      // Blokir akses ke aplikasi utama (/, /tamu, /kiosk, /skm, /sekolah) maupun ke NPSN sekolah lain
+      if (!isDinasProtectedRoute) {
+        if (!urlSchoolNpsn || urlSchoolNpsn !== existingLocked) {
+          router.replace(`/sekolah/${existingLocked}`);
+        }
+      }
+      return;
+    }
+
+    // Jika pertama kali masuk ke URL sekolah (/sekolah/[npsn]), langsung kunci sesi peramban ke sekolah tersebut
+    if (urlSchoolNpsn) {
+      sessionStorage.setItem(ISOLATED_SCHOOL_SESSION_KEY, urlSchoolNpsn);
+      setLockedSchoolNpsn(urlSchoolNpsn);
+    }
+  }, [pathname, urlSchoolNpsn, isDinasProtectedRoute, router]);
+
+  const activeSchoolNpsn =
+    urlSchoolNpsn || (!isDinasProtectedRoute ? lockedSchoolNpsn : null);
+  const activeSchool = activeSchoolNpsn
+    ? sekolahList.find((s) => s.npsn === activeSchoolNpsn)
+    : null;
+
+  // Menu khusus ketika berada di Portal Sekolah (Aplikasi Utama Dinas TIDAK ditampilkan & TIDAK dapat diakses)
+  const schoolNavItems = activeSchoolNpsn
+    ? [
+        {
+          href: `/sekolah/${activeSchoolNpsn}`,
+          label: "Buku Tamu Sekolah",
+          icon: QrCode,
+          exact: true,
+        },
+        {
+          href: `/sekolah/${activeSchoolNpsn}/kiosk`,
+          label: "Layar Kiosk & QR Sekolah",
+          icon: Monitor,
+          exact: false,
+        },
+      ]
+    : [];
+
+  // Menu aplikasi utama Kantor Dinas (Hanya tampil jika bukan sesi portal sekolah)
+  const dinasNavItems = [
     {
       href: "/",
       label: "Menu Utama",
       icon: Home,
+      exact: true,
     },
     {
       href: "/tamu",
       label: "Portal Tamu",
       icon: QrCode,
+      exact: false,
     },
     {
       href: "/kiosk",
       label: "Portal Lobi Kiosk",
       icon: Monitor,
+      exact: false,
     },
     {
       href: "/skm",
       label: "Portal SKM",
       icon: ClipboardCheck,
-    },
-    {
-      href: "/sekolah",
-      label: "Portal Sekolah",
-      icon: School,
+      exact: false,
     },
   ];
 
-  const isInternalRoute =
-    pathname?.startsWith("/admin") || pathname?.startsWith("/kadis");
+  const navItems = activeSchoolNpsn ? schoolNavItems : dinasNavItems;
+  const brandHref = activeSchoolNpsn ? `/sekolah/${activeSchoolNpsn}` : "/";
+  const isSchoolAdminRoute = Boolean(
+    activeSchoolNpsn && pathname?.endsWith("/admin")
+  );
 
   return (
     <>
       <header className="sticky top-0 z-40 bg-[#0F2C59] text-white shadow-lg border-b-2 border-[#F59E0B] tenun-header-pattern no-print">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between py-3 gap-3">
-            {/* Brand Identity */}
+            {/* Brand Identity (Mengikuti Identitas Sekolah jika di Portal Sekolah) */}
             <div className="flex items-center justify-between">
-              <Link href="/" className="flex items-center gap-3 group">
+              <Link href={brandHref} className="flex items-center gap-3 group">
                 <KendariLogo className="w-11 h-11 shrink-0 transition-transform group-hover:scale-105" />
                 <div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <span className="font-extrabold text-lg sm:text-xl tracking-tight text-white">
-                      BUTADI
+                      {activeSchoolNpsn
+                        ? activeSchool?.nama_sekolah ||
+                          `Sekolah NPSN ${activeSchoolNpsn}`
+                        : "BUTADI"}
                     </span>
                     <span className="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#F59E0B] text-[#0F2C59]">
-                      Dikbud Kendari
+                      {activeSchoolNpsn
+                        ? `NPSN ${activeSchoolNpsn}`
+                        : "Dikbud Kendari"}
                     </span>
                   </div>
                   <p className="text-xs text-blue-200 leading-snug line-clamp-1 sm:line-clamp-none">
-                    Buku Tamu Digital &amp; E-Receptionist Dinas Pendidikan dan
-                    Kebudayaan Kota Kendari
+                    {activeSchoolNpsn
+                      ? `Buku Tamu Digital Resmi ${
+                          activeSchool?.nama_sekolah || "Satuan Pendidikan"
+                        } • Dinas Pendidikan & Kebudayaan Kota Kendari`
+                      : "Buku Tamu Digital & E-Receptionist Dinas Pendidikan dan Kebudayaan Kota Kendari"}
                   </p>
                 </div>
               </Link>
@@ -142,14 +216,13 @@ export function Navbar() {
               </div>
             </div>
 
-            {/* Public Menu Navigation */}
+            {/* Menu Navigation */}
             <nav className="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 no-scrollbar touch-pan-x">
               {navItems.map((item) => {
                 const Icon = item.icon;
-                const active =
-                  item.href === "/"
-                    ? pathname === "/"
-                    : pathname?.startsWith(item.href);
+                const active = item.exact
+                  ? pathname === item.href
+                  : pathname?.startsWith(item.href);
 
                 return (
                   <Link
@@ -167,13 +240,20 @@ export function Navbar() {
                 );
               })}
 
-              {isInternalRoute && (
+              {isSchoolAdminRoute && (
+                <span className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-extrabold bg-amber-500/20 border border-[#F59E0B] text-[#F59E0B] whitespace-nowrap">
+                  <Lock className="w-3.5 h-3.5" />
+                  <span>Mode Admin Sekolah</span>
+                </span>
+              )}
+
+              {isDinasProtectedRoute && (
                 <span className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-extrabold bg-amber-500/20 border border-[#F59E0B] text-[#F59E0B] whitespace-nowrap">
                   <Lock className="w-3.5 h-3.5" />
                   <span>
                     {pathname?.startsWith("/kadis")
                       ? "Mode Eksekutif Kepala Dinas"
-                      : "Mode Portal Admin"}
+                      : "Mode Portal Admin Dinas"}
                   </span>
                 </span>
               )}

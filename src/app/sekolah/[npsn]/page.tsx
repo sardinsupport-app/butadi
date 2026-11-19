@@ -288,14 +288,7 @@ function PortalTamuSekolahContent() {
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold border border-white/20 transition"
             >
               <Monitor className="w-4 h-4 text-[#F59E0B]" />
-              <span>Layar Kiosk</span>
-            </Link>
-            <Link
-              href="/sekolah"
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-blue-100 text-xs font-semibold transition"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Daftar Sekolah</span>
+              <span>Layar Kiosk &amp; QR Sekolah</span>
             </Link>
           </div>
         </div>

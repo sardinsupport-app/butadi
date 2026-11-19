@@ -284,53 +284,6 @@ export default function MainMenuHomePage() {
             </div>
           </Link>
         </div>
-
-        {/* EKOSISTEM TERINTEGRASI: BUKU TAMU SEKOLAH SE-KOTA KENDARI */}
-        <div className="pt-4">
-          <div className="bg-gradient-to-r from-[#0F2C59] via-[#1E40AF] to-[#0F2C59] rounded-3xl p-6 sm:p-8 text-white shadow-xl border-2 border-[#F59E0B] flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-            <div className="space-y-3 max-w-2xl">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 border border-white/20 text-[11px] font-extrabold uppercase tracking-wider text-[#F59E0B]">
-                <School className="w-4 h-4" />
-                <span>
-                  EKOSISTEM TERINTEGRASI DINAS PENDIDIKAN &amp; SATUAN
-                  PENDIDIKAN
-                </span>
-              </div>
-              <h3 className="text-xl sm:text-2xl font-extrabold">
-                Portal Buku Tamu Digital Sekolah se-Kota Kendari
-              </h3>
-              <p className="text-xs sm:text-sm text-blue-100 leading-relaxed">
-                Layanan buku tamu terintegrasi untuk seluruh{" "}
-                <strong>TK/PAUD, SD, dan SMP di Kota Kendari</strong>. Data buku
-                tamu setiap sekolah dikelola secara mandiri oleh{" "}
-                <strong>Admin Sekolah masing-masing</strong> dan terhubung{" "}
-                <em>real-time</em> ke pusat pemantauan Dinas Pendidikan Kota
-                Kendari.
-              </p>
-              <div className="flex flex-wrap items-center gap-3 pt-1 text-xs text-blue-200">
-                <span className="inline-flex items-center gap-1.5 bg-white/10 px-3 py-1.5 rounded-xl font-bold text-white">
-                  <School className="w-3.5 h-3.5 text-[#F59E0B]" />
-                  {sekolahList.length} Sekolah Terdaftar
-                </span>
-                <span className="inline-flex items-center gap-1.5 bg-white/10 px-3 py-1.5 rounded-xl font-bold text-white">
-                  <Users className="w-3.5 h-3.5 text-emerald-300" />
-                  {kunjunganSekolahList.length} Riwayat Kunjungan Sekolah
-                </span>
-              </div>
-            </div>
-
-            <div className="flex flex-col sm:flex-row lg:flex-col gap-3 shrink-0">
-              <Link
-                href="/sekolah"
-                className="px-6 py-3.5 rounded-2xl bg-[#F59E0B] hover:bg-amber-400 text-[#0F2C59] font-extrabold text-sm shadow-lg transition flex items-center justify-center gap-2"
-              >
-                <School className="w-5 h-5" />
-                <span>Buka Direktori Portal Sekolah</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Info Alur Pelayanan & Jam Operasional */}

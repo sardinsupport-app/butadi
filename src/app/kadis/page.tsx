@@ -1324,6 +1324,11 @@ export default function PortalKadisPage() {
       portalBadge="Otorisasi Eksekutif Pimpinan"
       portalTitle="Portal Kepala Dinas Dikbud Kendari"
       portalSubtitle="Halaman khusus Kepala Dinas & Sekretaris Dinas untuk persetujuan langsung (VIP Approval), disposisi, dan pantauan IKM."
+      onUnlocked={() => {
+        if (typeof window !== "undefined") {
+          sessionStorage.removeItem("butadi_isolated_school_npsn");
+        }
+      }}
     >
       {(onLock) => <PortalKadisDashboard onLock={onLock} />}
     </PasscodeGate>

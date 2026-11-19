@@ -1080,6 +1080,8 @@ export default function PortalAdminSekolahPage() {
       portalBadge={`Admin Sekolah • NPSN ${sekolah.npsn}`}
       portalTitle={`Admin ${sekolah.nama_sekolah}`}
       portalSubtitle={`Halaman khusus Operator / Tata Usaha / Petugas Buku Tamu ${sekolah.nama_sekolah}. Data buku tamu sekolah hanya dapat dikelola oleh sekolah ini sendiri.`}
+      backHref={`/sekolah/${sekolah.npsn}`}
+      backLabel={`Kembali ke Buku Tamu ${sekolah.nama_sekolah}`}
     >
       {(onLock) => <AdminSekolahDashboard sekolah={sekolah} onLock={onLock} />}
     </PasscodeGate>
