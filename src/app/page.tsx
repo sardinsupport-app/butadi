@@ -44,78 +44,203 @@ export default function MainMenuHomePage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12 space-y-10">
-      {/* Hero Banner Utama */}
-      <div className="rounded-3xl bg-gradient-to-br from-[#0F2C59] via-[#1E40AF] to-[#0F2C59] text-white p-7 sm:p-11 shadow-2xl border-2 border-[#F59E0B]/70 relative overflow-hidden">
-        <div className="max-w-3xl space-y-5 relative z-10">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/15 border border-white/20 text-xs font-bold tracking-wide text-[#F59E0B]">
-            <Sparkles className="w-4 h-4" />
-            <span>LAYANAN PENERIMAAN TAMU &amp; SURVEI PELAYANAN TERPADU</span>
-          </div>
+      {/* Hero Banner Utama — Tata Letak Proporsional & Estetik Penuh */}
+      <div className="rounded-3xl bg-gradient-to-br from-[#0F2C59] via-[#1E40AF] to-[#0F2C59] text-white p-6 sm:p-9 lg:p-10 shadow-2xl border-2 border-[#F59E0B]/80 relative overflow-hidden">
+        {/* Ornamen Cahaya Dekoratif Latar Belakang */}
+        <div className="pointer-events-none absolute -top-24 -right-24 w-80 h-80 rounded-full bg-[#F59E0B]/15 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-24 -left-24 w-72 h-72 rounded-full bg-sky-400/15 blur-3xl" />
 
-          <div className="flex items-center gap-4">
-            <KendariLogo className="w-14 h-14 sm:w-16 sm:h-16 shrink-0" />
-            <div>
-              <p className="text-xs sm:text-sm font-bold uppercase tracking-widest text-[#F59E0B]">
-                Pemerintah Kota Kendari
-              </p>
-              <h1 className="text-2xl sm:text-4xl font-extrabold leading-tight">
-                BUTADI &mdash; Buku Tamu Digital Dikbud Kendari
-              </h1>
-            </div>
-          </div>
+        <div className="relative z-10 space-y-7">
+          {/* Baris Atas: 2 Kolom Seimbang (Kiri: Identitas Utama, Kanan: Panel Status Pelayanan Live) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center">
+            {/* Kolom Kiri (7 Kolom) */}
+            <div className="lg:col-span-7 space-y-4">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/15 border border-white/20 text-[11px] sm:text-xs font-extrabold tracking-wide text-[#F59E0B]">
+                <Sparkles className="w-4 h-4 shrink-0" />
+                <span>
+                  LAYANAN PENERIMAAN TAMU &amp; SURVEI PELAYANAN TERPADU
+                </span>
+              </div>
 
-          <p className="text-sm sm:text-base text-blue-100 leading-relaxed">
-            Selamat datang di portal layanan digital{" "}
-            <strong>Dinas Pendidikan dan Kebudayaan Kota Kendari</strong>.
-            Silakan pilih menu fasilitas layanan di bawah ini untuk melakukan
-            registrasi kunjungan, memantau antrean lobi, atau mengisi Survei
-            Kepuasan Masyarakat (SKM).
-          </p>
+              <div className="flex items-center gap-4">
+                <div className="p-2 rounded-2xl bg-white/10 border border-white/20 shadow-inner shrink-0">
+                  <KendariLogo className="w-14 h-14 sm:w-16 sm:h-16" />
+                </div>
+                <div>
+                  <p className="text-xs sm:text-sm font-extrabold uppercase tracking-widest text-[#F59E0B]">
+                    Pemerintah Kota Kendari
+                  </p>
+                  <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold leading-tight tracking-tight">
+                    BUTADI &mdash; Buku Tamu Digital Dikbud Kendari
+                  </h1>
+                </div>
+              </div>
 
-          {/* Indikator Live Singkat */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 border-t border-white/15">
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-3">
-              <p className="text-[11px] text-blue-200 font-semibold">
-                Tamu Hari Ini
+              <p className="text-sm sm:text-base text-blue-100 leading-relaxed">
+                Selamat datang di portal layanan digital{" "}
+                <strong className="text-white">
+                  Dinas Pendidikan dan Kebudayaan Kota Kendari
+                </strong>
+                . Silakan pilih menu fasilitas layanan di bawah ini untuk
+                melakukan registrasi kunjungan, memantau antrean lobi, atau
+                mengisi Survei Kepuasan Masyarakat (SKM).
               </p>
-              <p className="text-xl sm:text-2xl font-extrabold text-white mt-0.5">
-                {todayVisits.length} Orang
-              </p>
+
+              <div className="flex flex-wrap items-center gap-3 pt-1">
+                <Link
+                  href="/tamu"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#F59E0B] hover:bg-amber-400 text-[#0F2C59] font-extrabold text-xs sm:text-sm shadow-lg transition"
+                >
+                  <QrCode className="w-4 h-4" />
+                  <span>Registrasi Tamu Sekarang</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+                <Link
+                  href="/skm"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/25 text-white font-bold text-xs sm:text-sm transition"
+                >
+                  <ClipboardCheck className="w-4 h-4 text-emerald-300" />
+                  <span>Isi Survei SKM</span>
+                </Link>
+              </div>
             </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-3">
-              <p className="text-[11px] text-blue-200 font-semibold">
-                Antrean Aktif
-              </p>
-              <p className="text-xl sm:text-2xl font-extrabold text-[#F59E0B] mt-0.5">
-                {activeQueue.length} Tiket
-              </p>
-            </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-3">
-              <p className="text-[11px] text-blue-200 font-semibold">
-                Unit Siap Melayani
-              </p>
-              <p className="text-xl sm:text-2xl font-extrabold text-emerald-300 mt-0.5">
-                {availablePejabatCount} / {bidangList.length} Bidang
-              </p>
-            </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-3">
-              <p className="text-[11px] text-blue-200 font-semibold">
-                Indeks Kepuasan (IKM)
-              </p>
-              <p className="text-xl sm:text-2xl font-extrabold text-amber-300 mt-0.5">
-                {ikm.totalResponden > 0 ? (
-                  <>
-                    {ikm.nilaiIkm}{" "}
-                    <span className="text-xs font-bold">
-                      (Mutu {ikm.mutuPelayanan})
+
+            {/* Kolom Kanan (5 Kolom): Kartu Status Ketersediaan Unit Layanan Live */}
+            <div className="lg:col-span-5">
+              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/20 shadow-xl space-y-3.5">
+                <div className="flex items-center justify-between border-b border-white/15 pb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="relative flex h-2.5 w-2.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400" />
                     </span>
-                  </>
-                ) : (
-                  <span className="text-sm font-bold text-blue-200">
-                    Belum Ada Data
+                    <span className="text-xs font-extrabold uppercase tracking-wider text-white">
+                      Status Unit Layanan Kantor
+                    </span>
+                  </div>
+                  <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-400/20 text-emerald-200 border border-emerald-300/30">
+                    Real-Time
                   </span>
-                )}
-              </p>
+                </div>
+
+                <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+                  {bidangList.slice(0, 4).map((b) => {
+                    const badgeColor =
+                      b.status_pejabat === "Tersedia"
+                        ? "bg-emerald-400/20 text-emerald-200 border-emerald-400/30"
+                        : b.status_pejabat === "Rapat"
+                        ? "bg-amber-400/20 text-amber-200 border-amber-400/30"
+                        : "bg-rose-400/20 text-rose-200 border-rose-400/30";
+                    return (
+                      <div
+                        key={b.id}
+                        className="flex items-center justify-between gap-2 bg-slate-900/25 px-3 py-2 rounded-xl border border-white/10 text-xs"
+                      >
+                        <span className="font-semibold text-blue-50 truncate">
+                          {b.nama_bidang
+                            .replace(" (Guru & Tenaga Kependidikan)", "")
+                            .replace(" (Umum, Kepegawaian & Perencanaan)", "")}
+                        </span>
+                        <span
+                          className={`shrink-0 px-2 py-0.5 rounded-md text-[10px] font-extrabold border ${badgeColor}`}
+                        >
+                          {b.status_pejabat}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="pt-1 flex items-center justify-between text-[11px] text-blue-200">
+                  <span>Total {bidangList.length} Unit Kerja Terhubung</span>
+                  <Link
+                    href="/kiosk"
+                    className="font-extrabold text-[#F59E0B] hover:underline flex items-center gap-1"
+                  >
+                    <span>Lihat Semua di Kiosk</span>
+                    <ArrowRight className="w-3 h-3" />
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Baris Bawah: 4 Kartu Indikator Membentang Penuh & Simetris (100% Lebar) */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 pt-6 border-t border-white/15">
+            <div className="bg-white/10 hover:bg-white/15 transition backdrop-blur-sm rounded-2xl p-4 border border-white/15 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs text-blue-200 font-semibold">
+                  Tamu Hari Ini
+                </p>
+                <p className="text-2xl sm:text-3xl font-extrabold text-white mt-1">
+                  {todayVisits.length}{" "}
+                  <span className="text-xs sm:text-sm font-bold text-blue-200">
+                    Orang
+                  </span>
+                </p>
+              </div>
+              <div className="w-11 h-11 rounded-xl bg-white/10 border border-white/15 flex items-center justify-center shrink-0 text-blue-200">
+                <Users className="w-5 h-5" />
+              </div>
+            </div>
+
+            <div className="bg-white/10 hover:bg-white/15 transition backdrop-blur-sm rounded-2xl p-4 border border-white/15 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs text-blue-200 font-semibold">
+                  Antrean Aktif
+                </p>
+                <p className="text-2xl sm:text-3xl font-extrabold text-[#F59E0B] mt-1">
+                  {activeQueue.length}{" "}
+                  <span className="text-xs sm:text-sm font-bold text-amber-200">
+                    Tiket
+                  </span>
+                </p>
+              </div>
+              <div className="w-11 h-11 rounded-xl bg-[#F59E0B]/20 border border-[#F59E0B]/30 flex items-center justify-center shrink-0 text-[#F59E0B]">
+                <Clock className="w-5 h-5" />
+              </div>
+            </div>
+
+            <div className="bg-white/10 hover:bg-white/15 transition backdrop-blur-sm rounded-2xl p-4 border border-white/15 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs text-blue-200 font-semibold">
+                  Unit Siap Melayani
+                </p>
+                <p className="text-2xl sm:text-3xl font-extrabold text-emerald-300 mt-1">
+                  {availablePejabatCount} / {bidangList.length}{" "}
+                  <span className="text-xs sm:text-sm font-bold text-emerald-200">
+                    Bidang
+                  </span>
+                </p>
+              </div>
+              <div className="w-11 h-11 rounded-xl bg-emerald-400/20 border border-emerald-400/30 flex items-center justify-center shrink-0 text-emerald-300">
+                <CheckCircle2 className="w-5 h-5" />
+              </div>
+            </div>
+
+            <div className="bg-white/10 hover:bg-white/15 transition backdrop-blur-sm rounded-2xl p-4 border border-white/15 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs text-blue-200 font-semibold">
+                  Indeks Kepuasan (IKM)
+                </p>
+                <div className="mt-1">
+                  {ikm.totalResponden > 0 ? (
+                    <p className="text-2xl sm:text-3xl font-extrabold text-amber-300">
+                      {ikm.nilaiIkm}{" "}
+                      <span className="text-xs font-bold">
+                        (Mutu {ikm.mutuPelayanan})
+                      </span>
+                    </p>
+                  ) : (
+                    <p className="text-base sm:text-lg font-extrabold text-amber-200">
+                      Belum Ada Data
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="w-11 h-11 rounded-xl bg-amber-400/20 border border-amber-400/30 flex items-center justify-center shrink-0 text-amber-300">
+                <Award className="w-5 h-5" />
+              </div>
             </div>
           </div>
         </div>
