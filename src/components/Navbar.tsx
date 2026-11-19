@@ -11,6 +11,7 @@ import {
   Lock,
   Monitor,
   QrCode,
+  School,
   X,
 } from "lucide-react";
 import { useButadi } from "@/context/ButadiContext";
@@ -85,6 +86,11 @@ export function Navbar() {
       href: "/skm",
       label: "Portal SKM",
       icon: ClipboardCheck,
+    },
+    {
+      href: "/sekolah",
+      label: "Portal Sekolah",
+      icon: School,
     },
   ];
 

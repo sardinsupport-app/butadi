@@ -1,5 +1,11 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import { Bidang, Kunjungan, SkmResponse } from "@/types/butadi";
+import {
+  Bidang,
+  Kunjungan,
+  KunjunganSekolah,
+  Sekolah,
+  SkmResponse,
+} from "@/types/butadi";
 
 const LS_SUPABASE_URL = "butadi_supabase_url";
 const LS_SUPABASE_KEY = "butadi_supabase_anon_key";
@@ -145,6 +151,157 @@ export function getInitialKunjunganSeed(): Kunjungan[] {
 }
 
 export function getInitialSkmSeed(): SkmResponse[] {
+  // Mode data riil: Tanpa data dummy/mockup
+  return [];
+}
+
+export const KECAMATAN_KENDARI_LIST: string[] = [
+  "Mandonga",
+  "Baruga",
+  "Puuwatu",
+  "Kadia",
+  "Wua-Wua",
+  "Poasia",
+  "Abeli",
+  "Kambu",
+  "Nambo",
+  "Kendari",
+  "Kendari Barat",
+];
+
+export const DEFAULT_UNIT_LAYANAN_SEKOLAH: string[] = [
+  "Kepala Sekolah",
+  "Tata Usaha / Operator Sekolah",
+  "Wakil Kepala Sekolah",
+  "Guru BK / Guru Piket",
+  "Wali Kelas / Guru Mata Pelajaran",
+  "Bendahara BOS / Komite Sekolah",
+];
+
+export const INITIAL_SEKOLAH_SEED: Sekolah[] = [
+  {
+    id: "44444444-4444-4444-8444-444444444401",
+    npsn: "40402601",
+    nama_sekolah: "SMP Negeri 1 Kendari",
+    jenjang: "SMP",
+    kecamatan: "Mandonga",
+    alamat: "Jl. Jend. Ahmad Yani No. 17, Kota Kendari",
+    kepala_sekolah: "Drs. Muh. Ruslan, M.Pd.",
+    nip_kepsek: "19700512 199603 1 004",
+    no_wa_sekolah: "08114001001",
+    passcode: "smpn1kdi",
+    status_kepsek: "Tersedia",
+    unit_layanan: DEFAULT_UNIT_LAYANAN_SEKOLAH,
+    aktif: true,
+  },
+  {
+    id: "44444444-4444-4444-8444-444444444402",
+    npsn: "40402602",
+    nama_sekolah: "SMP Negeri 2 Kendari",
+    jenjang: "SMP",
+    kecamatan: "Kendari Barat",
+    alamat: "Jl. Sultan Hasanuddin No. 48, Tipulu, Kota Kendari",
+    kepala_sekolah: "Hj. Sitti Maemunah, S.Pd., M.Pd.",
+    nip_kepsek: "19720814 199802 2 003",
+    no_wa_sekolah: "08114001002",
+    passcode: "smpn2kdi",
+    status_kepsek: "Tersedia",
+    unit_layanan: DEFAULT_UNIT_LAYANAN_SEKOLAH,
+    aktif: true,
+  },
+  {
+    id: "44444444-4444-4444-8444-444444444403",
+    npsn: "40402609",
+    nama_sekolah: "SMP Negeri 9 Kendari",
+    jenjang: "SMP",
+    kecamatan: "Kadia",
+    alamat: "Jl. Sao-Sao, Bende, Kec. Kadia, Kota Kendari",
+    kepala_sekolah: "Milwan, S.Pd., M.Pd.",
+    nip_kepsek: "19741109 199903 1 005",
+    no_wa_sekolah: "08114001009",
+    passcode: "smpn9kdi",
+    status_kepsek: "Tersedia",
+    unit_layanan: DEFAULT_UNIT_LAYANAN_SEKOLAH,
+    aktif: true,
+  },
+  {
+    id: "44444444-4444-4444-8444-444444444404",
+    npsn: "40402604",
+    nama_sekolah: "SMP Negeri 4 Kendari",
+    jenjang: "SMP",
+    kecamatan: "Wua-Wua",
+    alamat: "Jl. Kijang No. 5, Rahandouna, Kota Kendari",
+    kepala_sekolah: "La Ode Muh. Kurdin, S.Pd., M.Pd.",
+    nip_kepsek: "19710321 199702 1 002",
+    no_wa_sekolah: "08114001004",
+    passcode: "smpn4kdi",
+    status_kepsek: "Tersedia",
+    unit_layanan: DEFAULT_UNIT_LAYANAN_SEKOLAH,
+    aktif: true,
+  },
+  {
+    id: "44444444-4444-4444-8444-444444444405",
+    npsn: "40402501",
+    nama_sekolah: "SD Negeri 1 Kendari",
+    jenjang: "SD",
+    kecamatan: "Kendari",
+    alamat: "Jl. Ir. H. Alala, Kandai, Kota Kendari",
+    kepala_sekolah: "Hj. Hasniati, S.Pd., M.Pd.",
+    nip_kepsek: "19750621 200012 2 004",
+    no_wa_sekolah: "08114002001",
+    passcode: "sdn1kdi",
+    status_kepsek: "Tersedia",
+    unit_layanan: DEFAULT_UNIT_LAYANAN_SEKOLAH,
+    aktif: true,
+  },
+  {
+    id: "44444444-4444-4444-8444-444444444406",
+    npsn: "40402502",
+    nama_sekolah: "SD Negeri 2 Baruga",
+    jenjang: "SD",
+    kecamatan: "Baruga",
+    alamat: "Jl. Brigjen M. Yoenoes, Lepo-Lepo, Kec. Baruga",
+    kepala_sekolah: "Wa Ode Siti Aisyah, S.Pd.",
+    nip_kepsek: "19780411 200312 2 007",
+    no_wa_sekolah: "08114002002",
+    passcode: "sdn2baruga",
+    status_kepsek: "Tersedia",
+    unit_layanan: DEFAULT_UNIT_LAYANAN_SEKOLAH,
+    aktif: true,
+  },
+  {
+    id: "44444444-4444-4444-8444-444444444407",
+    npsn: "40402584",
+    nama_sekolah: "SD Negeri 84 Kendari",
+    jenjang: "SD",
+    kecamatan: "Kambu",
+    alamat: "Jl. Martandu, Kambu, Kota Kendari",
+    kepala_sekolah: "H. Abdul Rahim, S.Pd., M.M.",
+    nip_kepsek: "19730918 199803 1 006",
+    no_wa_sekolah: "08114002084",
+    passcode: "sdn84kdi",
+    status_kepsek: "Tersedia",
+    unit_layanan: DEFAULT_UNIT_LAYANAN_SEKOLAH,
+    aktif: true,
+  },
+  {
+    id: "44444444-4444-4444-8444-444444444408",
+    npsn: "40402701",
+    nama_sekolah: "TK Negeri Pembina Kota Kendari",
+    jenjang: "TK/PAUD",
+    kecamatan: "Kadia",
+    alamat: "Jl. Balaikota III, Pondambea, Kec. Kadia, Kota Kendari",
+    kepala_sekolah: "Hj. Nurhayati, S.Pd.AUD.",
+    nip_kepsek: "19761205 200212 2 003",
+    no_wa_sekolah: "08114003001",
+    passcode: "tknpembina",
+    status_kepsek: "Tersedia",
+    unit_layanan: DEFAULT_UNIT_LAYANAN_SEKOLAH,
+    aktif: true,
+  },
+];
+
+export function getInitialKunjunganSekolahSeed(): KunjunganSekolah[] {
   // Mode data riil: Tanpa data dummy/mockup
   return [];
 }

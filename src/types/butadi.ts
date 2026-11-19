@@ -83,3 +83,61 @@ export interface UnsurMetadata {
   pertanyaan: string;
   opsi: { nilai: number; label: string }[];
 }
+
+// ============================================================================
+// TIPE DATA EKOSISTEM BUKU TAMU SEKOLAH SE-KOTA KENDARI
+// ============================================================================
+
+export type JenjangSekolah = "TK/PAUD" | "SD" | "SMP";
+
+export type KategoriTamuSekolah =
+  | "Orang Tua / Wali"
+  | "Pengawas / Dikbud"
+  | "Instansi / Mitra"
+  | "Umum";
+
+export type StatusKunjunganSekolah =
+  | "Menunggu"
+  | "Dilayani"
+  | "Selesai"
+  | "Batal";
+
+export interface Sekolah {
+  id: string;
+  npsn: string;
+  nama_sekolah: string;
+  jenjang: JenjangSekolah;
+  kecamatan: string;
+  alamat: string;
+  kepala_sekolah: string;
+  nip_kepsek?: string;
+  no_wa_sekolah?: string;
+  passcode: string;
+  status_kepsek: StatusPejabat;
+  unit_layanan: string[];
+  aktif: boolean;
+  created_at?: string;
+}
+
+export interface KunjunganSekolah {
+  id: string;
+  sekolah_id: string;
+  kode_tiket: string;
+  tanggal: string; // YYYY-MM-DD
+  waktu_masuk: string; // ISO timestamp
+  waktu_keluar: string | null;
+  nik_nip: string;
+  nama_tamu: string;
+  instansi_asal: string;
+  kategori_tamu: KategoriTamuSekolah;
+  no_wa: string;
+  tujuan_unit: string;
+  keperluan: string;
+  foto_url: string | null;
+  status: StatusKunjunganSekolah;
+  catatan_sekolah: string | null;
+  nilai_kepuasan: number | null;
+  saran_masukan: string | null;
+  created_at?: string;
+}
+

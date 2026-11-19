@@ -1,4 +1,9 @@
-import { Bidang, Kunjungan } from "@/types/butadi";
+import {
+  Bidang,
+  Kunjungan,
+  KunjunganSekolah,
+  Sekolah,
+} from "@/types/butadi";
 
 export function normalizeWaNumber(phone: string): string {
   const digits = phone.replace(/\D/g, "");
@@ -74,6 +79,42 @@ export function buildSkmWaMessage(
     ``,
     `_Masukan Anda sangat berharga bagi kemajuan layanan pendidikan & kebudayaan di Kota Kendari._`,
   ].join("\n");
+}
+
+export function buildTicketSekolahWaMessage(
+  kunjungan: KunjunganSekolah,
+  sekolah: Sekolah,
+  baseUrl?: string
+): string {
+  const origin =
+    baseUrl || (typeof window !== "undefined" ? window.location.origin : "");
+  const trackUrl = `${origin}/sekolah/${encodeURIComponent(
+    sekolah.npsn
+  )}?tiket=${encodeURIComponent(kunjungan.kode_tiket)}`;
+
+  return [
+    `*E-TICKET BUKU TAMU DIGITAL - BUTADI*`,
+    `*${sekolah.nama_sekolah.toUpperCase()} (NPSN: ${sekolah.npsn})*`,
+    `*Dinas Pendidikan & Kebudayaan Kota Kendari*`,
+    `----------------------------------------`,
+    `Halo Bapak/Ibu *${kunjungan.nama_tamu}*,`,
+    `Kunjungan Anda di *${sekolah.nama_sekolah}* telah tercatat:`,
+    ``,
+    `• *Kode Tiket:* ${kunjungan.kode_tiket}`,
+    `• *Kategori:* ${kunjungan.kategori_tamu}`,
+    `• *Asal:* ${kunjungan.instansi_asal}`,
+    `• *Tujuan di Sekolah:* ${kunjungan.tujuan_unit}`,
+    `• *Keperluan:* ${kunjungan.keperluan}`,
+    `• *Status:* *${kunjungan.status.toUpperCase()}*`,
+    kunjungan.catatan_sekolah
+      ? `• *Catatan Sekolah:* _${kunjungan.catatan_sekolah}_`
+      : "",
+    ``,
+    `Pantau status tiket & berikan penilaian pelayanan sekolah melalui tautan berikut:`,
+    trackUrl,
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 export function getDirectWaUrl(phone: string, message: string): string {

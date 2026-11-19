@@ -1,7 +1,13 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
-import { Bidang, Kunjungan, SkmResponse } from "@/types/butadi";
+import {
+  Bidang,
+  Kunjungan,
+  KunjunganSekolah,
+  Sekolah,
+  SkmResponse,
+} from "@/types/butadi";
 import { calculateIKM } from "@/lib/ikm";
 
 export function exportLaporanToPDF(
@@ -198,5 +204,222 @@ export function exportLaporanToExcel(
     `Rekap_BUTADI_SKM_Dikbud_Kendari_${new Date()
       .toISOString()
       .slice(0, 10)}.xlsx`
+  );
+}
+
+// ============================================================================
+// EKSPOR LAPORAN BUKU TAMU SEKOLAH (PER SEKOLAH / MONITORING DINAS)
+// ============================================================================
+
+export function exportKunjunganSekolahToPDF(
+  kunjunganSekolahList: KunjunganSekolah[],
+  sekolahList: Sekolah[],
+  options?: {
+    targetSekolah?: Sekolah;
+    periodeLabel?: string;
+  }
+) {
+  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+  const sekolahMap = new Map(sekolahList.map((s) => [s.id, s]));
+  const target = options?.targetSekolah;
+  const periode = options?.periodeLabel || "Semua Periode";
+
+  // Header Kop Surat
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  doc.text("PEMERINTAH KOTA KENDARI", 148.5, 13, { align: "center" });
+  doc.setFontSize(14);
+  doc.text("DINAS PENDIDIKAN DAN KEBUDAYAAN", 148.5, 19, { align: "center" });
+
+  if (target) {
+    doc.setFontSize(13);
+    doc.text(
+      `${target.nama_sekolah.toUpperCase()} (NPSN: ${target.npsn})`,
+      148.5,
+      25,
+      { align: "center" }
+    );
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.text(
+      `${target.alamat || `Kecamatan ${target.kecamatan}, Kota Kendari`}`,
+      148.5,
+      30,
+      { align: "center" }
+    );
+  } else {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.text(
+      "Monitoring Terpadu Buku Tamu Digital Satuan Pendidikan (TK/SD/SMP) se-Kota Kendari",
+      148.5,
+      25,
+      { align: "center" }
+    );
+  }
+
+  const lineY = target ? 33 : 28;
+  doc.setLineWidth(0.7);
+  doc.line(14, lineY, 283, lineY);
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.text(
+    target
+      ? `REKAPITULASI BUKU TAMU DIGITAL (BUTADI) - ${target.nama_sekolah.toUpperCase()}`
+      : "REKAPITULASI MONITORING KUNJUNGAN SEKOLAH SE-KOTA KENDARI",
+    14,
+    lineY + 7
+  );
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.text(
+    `Periode: ${periode}   |   Total Kunjungan: ${kunjunganSekolahList.length} Tamu`,
+    14,
+    lineY + 12
+  );
+
+  const tableRows = kunjunganSekolahList.map((k, index) => {
+    const sek = sekolahMap.get(k.sekolah_id);
+    const jamMasuk = new Date(k.waktu_masuk).toLocaleTimeString("id-ID", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    const jamKeluar = k.waktu_keluar
+      ? new Date(k.waktu_keluar).toLocaleTimeString("id-ID", {
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : "-";
+
+    return [
+      index + 1,
+      k.kode_tiket,
+      `${k.tanggal}\n(${jamMasuk} - ${jamKeluar})`,
+      sek ? `${sek.nama_sekolah}\n(${sek.jenjang} - ${sek.kecamatan})` : "-",
+      `${k.nama_tamu}\n(${k.nik_nip})`,
+      `${k.instansi_asal}\n[${k.kategori_tamu}]`,
+      k.tujuan_unit,
+      k.keperluan,
+      k.status,
+    ];
+  });
+
+  autoTable(doc, {
+    startY: lineY + 16,
+    head: [
+      [
+        "No",
+        "Kode Tiket",
+        "Tanggal & Jam",
+        "Satuan Pendidikan",
+        "Nama Tamu & NIK/NIP",
+        "Asal & Kategori",
+        "Unit Tujuan",
+        "Keperluan Kunjungan",
+        "Status",
+      ],
+    ],
+    body: tableRows,
+    styles: {
+      fontSize: 7.5,
+      cellPadding: 2,
+    },
+    headStyles: {
+      fillColor: [15, 44, 89],
+      textColor: [255, 255, 255],
+      fontStyle: "bold",
+    },
+    alternateRowStyles: {
+      fillColor: [248, 250, 252],
+    },
+  });
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const finalY = ((doc as any).lastAutoTable?.finalY || 140) + 12;
+  const signY = finalY > 170 ? 25 : finalY;
+  if (finalY > 170) {
+    doc.addPage();
+  }
+
+  const tanggalCetak = new Date().toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
+  doc.setFontSize(9.5);
+  doc.text(`Kendari, ${tanggalCetak}`, 215, signY);
+  if (target) {
+    doc.text(`Kepala ${target.nama_sekolah},`, 215, signY + 6);
+    doc.setFont("helvetica", "bold");
+    doc.text(target.kepala_sekolah, 215, signY + 25);
+    doc.setFont("helvetica", "normal");
+    if (target.nip_kepsek) {
+      doc.text(`NIP. ${target.nip_kepsek}`, 215, signY + 30);
+    }
+  } else {
+    doc.text("Kepala Dinas Pendidikan dan Kebudayaan", 215, signY + 5);
+    doc.text("Kota Kendari,", 215, signY + 10);
+    doc.setFont("helvetica", "bold");
+    doc.text("Hj. Saemina, S.Pd., M.Pd.", 215, signY + 28);
+    doc.setFont("helvetica", "normal");
+    doc.text("NIP. 19680512 199303 2 008", 215, signY + 33);
+  }
+
+  const fileSlug = target
+    ? `BUTADI_${target.npsn}_${target.nama_sekolah.replace(/\s+/g, "_")}`
+    : "Monitoring_Sekolah_Dikbud_Kendari";
+
+  doc.save(`${fileSlug}_${new Date().toISOString().slice(0, 10)}.pdf`);
+}
+
+export function exportKunjunganSekolahToExcel(
+  kunjunganSekolahList: KunjunganSekolah[],
+  sekolahList: Sekolah[],
+  targetSekolah?: Sekolah
+) {
+  const sekolahMap = new Map(sekolahList.map((s) => [s.id, s]));
+
+  const sheetData = kunjunganSekolahList.map((k, idx) => {
+    const sek = sekolahMap.get(k.sekolah_id);
+    return {
+      No: idx + 1,
+      "Kode Tiket": k.kode_tiket,
+      Tanggal: k.tanggal,
+      "Waktu Masuk": new Date(k.waktu_masuk).toLocaleTimeString("id-ID"),
+      "Waktu Keluar": k.waktu_keluar
+        ? new Date(k.waktu_keluar).toLocaleTimeString("id-ID")
+        : "-",
+      NPSN: sek?.npsn || "-",
+      "Nama Sekolah": sek?.nama_sekolah || "-",
+      Jenjang: sek?.jenjang || "-",
+      Kecamatan: sek?.kecamatan || "-",
+      "NIK / NIP Tamu": k.nik_nip,
+      "Nama Tamu": k.nama_tamu,
+      "Asal / Instansi": k.instansi_asal,
+      "Kategori Tamu": k.kategori_tamu,
+      "Nomor WhatsApp": k.no_wa,
+      "Tujuan di Sekolah": k.tujuan_unit,
+      Keperluan: k.keperluan,
+      Status: k.status,
+      "Catatan Sekolah": k.catatan_sekolah || "-",
+      "Rating Kepuasan (1-4)": k.nilai_kepuasan || "-",
+      "Saran & Masukan": k.saran_masukan || "-",
+    };
+  });
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(sheetData);
+  XLSX.utils.book_append_sheet(wb, ws, "Buku_Tamu_Sekolah");
+
+  const fileSlug = targetSekolah
+    ? `Rekap_BUTADI_${targetSekolah.npsn}`
+    : "Rekap_Monitoring_Sekolah_Kendari";
+
+  XLSX.writeFile(
+    wb,
+    `${fileSlug}_${new Date().toISOString().slice(0, 10)}.xlsx`
   );
 }

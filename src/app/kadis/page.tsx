@@ -22,8 +22,15 @@ import {
   CheckCircle2,
   Clock,
   Crown,
+  Eye,
+  FileSpreadsheet,
+  FileText,
   Lock,
   MessageSquareQuote,
+  School,
+  Search,
+  ShieldCheck,
+  Star,
   TrendingUp,
   UserCheck,
   Users,
@@ -31,6 +38,11 @@ import {
 } from "lucide-react";
 import { useButadi } from "@/context/ButadiContext";
 import { calculateIKM } from "@/lib/ikm";
+import {
+  exportKunjunganSekolahToExcel,
+  exportKunjunganSekolahToPDF,
+} from "@/lib/export";
+import { KECAMATAN_KENDARI_LIST } from "@/lib/supabase";
 import { Kunjungan, StatusPejabat } from "@/types/butadi";
 import { PasscodeGate } from "@/components/PasscodeGate";
 
@@ -49,9 +61,20 @@ function PortalKadisDashboard({ onLock }: { onLock: () => void }) {
     bidangList,
     kunjunganList,
     skmList,
+    sekolahList,
+    kunjunganSekolahList,
     updateStatusKunjungan,
     updateStatusPejabat,
   } = useButadi();
+
+  const [activeMode, setActiveMode] = useState<"dinas" | "sekolah">("dinas");
+  const [filterJenjangSekolah, setFilterJenjangSekolah] =
+    useState<string>("ALL");
+  const [filterKecamatanSekolah, setFilterKecamatanSekolah] =
+    useState<string>("ALL");
+  const [selectedSekolahId, setSelectedSekolahId] = useState<string>("ALL");
+  const [filterDateSekolah, setFilterDateSekolah] = useState<string>("");
+  const [searchSekolahVisit, setSearchSekolahVisit] = useState<string>("");
 
   const [disposisiModalItem, setDisposisiModalItem] =
     useState<Kunjungan | null>(null);
@@ -146,6 +169,101 @@ function PortalKadisDashboard({ onLock }: { onLock: () => void }) {
 
   const ikm = useMemo(() => calculateIKM(skmList), [skmList]);
 
+  // Analitik & Monitoring Kunjungan Sekolah se-Kota Kendari
+  const sekolahMap = useMemo(
+    () => new Map(sekolahList.map((s) => [s.id, s])),
+    [sekolahList]
+  );
+
+  const todaySchoolVisits = useMemo(
+    () => kunjunganSekolahList.filter((k) => k.tanggal === today),
+    [kunjunganSekolahList, today]
+  );
+
+  const monthSchoolVisits = useMemo(
+    () =>
+      kunjunganSekolahList.filter((k) => k.tanggal.startsWith(currentMonth)),
+    [kunjunganSekolahList, currentMonth]
+  );
+
+  const schoolDistribution = useMemo(() => {
+    const counts: Record<string, number> = {};
+    kunjunganSekolahList.forEach((k) => {
+      counts[k.sekolah_id] = (counts[k.sekolah_id] || 0) + 1;
+    });
+    return sekolahList
+      .map((s) => ({
+        id: s.id,
+        npsn: s.npsn,
+        nama: s.nama_sekolah
+          .replace("Negeri ", "N ")
+          .replace("Kota Kendari", "Kendari"),
+        namaLengkap: s.nama_sekolah,
+        jenjang: s.jenjang,
+        kecamatan: s.kecamatan,
+        jumlah: counts[s.id] || 0,
+      }))
+      .sort((a, b) => b.jumlah - a.jumlah);
+  }, [sekolahList, kunjunganSekolahList]);
+
+  const busiestSchool = schoolDistribution[0];
+
+  const avgSchoolRating = useMemo(() => {
+    const rated = kunjunganSekolahList.filter(
+      (k) => k.nilai_kepuasan !== null && k.nilai_kepuasan !== undefined
+    );
+    if (rated.length === 0) return { avg: 0, count: 0 };
+    const sum = rated.reduce((acc, r) => acc + (r.nilai_kepuasan || 0), 0);
+    return {
+      avg: Number((sum / rated.length).toFixed(2)),
+      count: rated.length,
+    };
+  }, [kunjunganSekolahList]);
+
+  const filteredKunjunganSekolah = useMemo(() => {
+    return kunjunganSekolahList.filter((k) => {
+      const sek = sekolahMap.get(k.sekolah_id);
+      if (
+        filterJenjangSekolah !== "ALL" &&
+        sek?.jenjang !== filterJenjangSekolah
+      )
+        return false;
+      if (
+        filterKecamatanSekolah !== "ALL" &&
+        sek?.kecamatan !== filterKecamatanSekolah
+      )
+        return false;
+      if (selectedSekolahId !== "ALL" && k.sekolah_id !== selectedSekolahId)
+        return false;
+      if (filterDateSekolah && k.tanggal !== filterDateSekolah) return false;
+      if (searchSekolahVisit.trim()) {
+        const q = searchSekolahVisit.toLowerCase();
+        const matchNama = k.nama_tamu.toLowerCase().includes(q);
+        const matchTiket = k.kode_tiket.toLowerCase().includes(q);
+        const matchAsal = k.instansi_asal.toLowerCase().includes(q);
+        const matchSek = sek?.nama_sekolah.toLowerCase().includes(q) || false;
+        const matchNpsn = sek?.npsn.toLowerCase().includes(q) || false;
+        if (
+          !matchNama &&
+          !matchTiket &&
+          !matchAsal &&
+          !matchSek &&
+          !matchNpsn
+        )
+          return false;
+      }
+      return true;
+    });
+  }, [
+    kunjunganSekolahList,
+    sekolahMap,
+    filterJenjangSekolah,
+    filterKecamatanSekolah,
+    selectedSekolahId,
+    filterDateSekolah,
+    searchSekolahVisit,
+  ]);
+
   // Actions Kepala Dinas
   const handleTerimaSekarang = async (k: Kunjungan) => {
     await updateStatusKunjungan(k.id, "Dilayani", {
@@ -182,62 +300,100 @@ function PortalKadisDashboard({ onLock }: { onLock: () => void }) {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8">
       {/* Executive Header */}
-      <div className="bg-gradient-to-r from-[#0F2C59] via-[#1E40AF] to-[#0F2C59] text-white rounded-3xl p-6 sm:p-8 shadow-xl border-b-4 border-[#F59E0B] flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-        <div className="space-y-1.5">
-          <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#F59E0B] text-[#0F2C59] text-[11px] font-extrabold uppercase">
-            <Crown className="w-3.5 h-3.5" />
-            <span>Portal 3 &bull; Executive Dashboard Kepala Dinas</span>
+      <div className="bg-gradient-to-r from-[#0F2C59] via-[#1E40AF] to-[#0F2C59] text-white rounded-3xl p-6 sm:p-8 shadow-xl border-b-4 border-[#F59E0B] space-y-5">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div className="space-y-1.5">
+            <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#F59E0B] text-[#0F2C59] text-[11px] font-extrabold uppercase">
+              <Crown className="w-3.5 h-3.5" />
+              <span>Portal 3 &bull; Executive Dashboard Kepala Dinas</span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold">
+              Dashboard Eksekutif &amp; Monitoring Sekolah se-Kota Kendari
+            </h1>
+            <p className="text-xs sm:text-sm text-blue-100">
+              Hj. Saemina, S.Pd., M.Pd. &mdash; Kepala Dinas Pendidikan dan
+              Kebudayaan Kota Kendari
+            </p>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold">
-            Dashboard Eksekutif &amp; Persetujuan VIP Kepala Dinas
-          </h1>
-          <p className="text-xs sm:text-sm text-blue-100">
-            Hj. Saemina, S.Pd., M.Pd. &mdash; Kepala Dinas Pendidikan dan
-            Kebudayaan Kota Kendari
-          </p>
+
+          {/* Status Kehadiran Kepala Dinas Quick Switch */}
+          {kadisBidang && (
+            <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/20 space-y-2">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-[#F59E0B]">
+                Status Kehadiran Kepala Dinas Saat Ini:
+              </p>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {(["Tersedia", "Rapat", "Dinas Luar"] as StatusPejabat[]).map(
+                  (st) => {
+                    const active = kadisBidang.status_pejabat === st;
+                    return (
+                      <button
+                        key={st}
+                        type="button"
+                        onClick={() => updateStatusPejabat(kadisBidang.id, st)}
+                        className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition ${
+                          active
+                            ? "bg-[#F59E0B] text-[#0F2C59] shadow"
+                            : "bg-white/10 text-blue-100 hover:bg-white/20"
+                        }`}
+                      >
+                        {st === "Tersedia" ? "Ada di Kantor" : st}
+                      </button>
+                    );
+                  }
+                )}
+                <button
+                  type="button"
+                  onClick={onLock}
+                  className="flex items-center gap-1 px-3 py-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-100 text-xs font-bold border border-rose-400/40 transition ml-1"
+                  title="Kunci Kembali Portal Kepala Dinas"
+                >
+                  <Lock className="w-3.5 h-3.5" />
+                  <span>Kunci</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Status Kehadiran Kepala Dinas Quick Switch */}
-        {kadisBidang && (
-          <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/20 space-y-2">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-[#F59E0B]">
-              Status Kehadiran Kepala Dinas Saat Ini:
-            </p>
-            <div className="flex items-center gap-1.5">
-              {(["Tersedia", "Rapat", "Dinas Luar"] as StatusPejabat[]).map(
-                (st) => {
-                  const active = kadisBidang.status_pejabat === st;
-                  return (
-                    <button
-                      key={st}
-                      type="button"
-                      onClick={() => updateStatusPejabat(kadisBidang.id, st)}
-                      className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition ${
-                        active
-                          ? "bg-[#F59E0B] text-[#0F2C59] shadow"
-                          : "bg-white/10 text-blue-100 hover:bg-white/20"
-                      }`}
-                    >
-                      {st === "Tersedia" ? "Ada di Kantor" : st}
-                    </button>
-                  );
-                }
-              )}
-              <button
-                type="button"
-                onClick={onLock}
-                className="flex items-center gap-1 px-3 py-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-100 text-xs font-bold border border-rose-400/40 transition ml-1"
-                title="Kunci Kembali Portal Kepala Dinas"
-              >
-                <Lock className="w-3.5 h-3.5" />
-                <span>Kunci</span>
-              </button>
-            </div>
-          </div>
-        )}
+        {/* Mode Switcher: Kantor Induk Dinas vs Monitoring Seluruh Sekolah */}
+        <div className="pt-4 border-t border-white/15 flex flex-wrap items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => setActiveMode("dinas")}
+            className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition flex items-center gap-2 ${
+              activeMode === "dinas"
+                ? "bg-[#F59E0B] text-[#0F2C59] shadow-lg"
+                : "bg-white/10 text-blue-100 hover:bg-white/20"
+            }`}
+          >
+            <Building2 className="w-4 h-4" />
+            <span>
+              Kantor Induk Dinas Pendidikan ({kunjunganList.length} Kunjungan)
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveMode("sekolah")}
+            className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition flex items-center gap-2 ${
+              activeMode === "sekolah"
+                ? "bg-[#F59E0B] text-[#0F2C59] shadow-lg"
+                : "bg-white/10 text-blue-100 hover:bg-white/20"
+            }`}
+          >
+            <School className="w-4 h-4" />
+            <span>
+              Monitoring &amp; History Kunjungan Sekolah ({sekolahList.length}{" "}
+              Sekolah &bull; {kunjunganSekolahList.length} Tamu)
+            </span>
+          </button>
+        </div>
       </div>
 
-      {/* 4 Executive Summary Cards */}
+      {activeMode === "dinas" ? (
+        <>
+          {/* 4 Executive Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex items-start justify-between">
           <div>
@@ -667,6 +823,413 @@ function PortalKadisDashboard({ onLock }: { onLock: () => void }) {
           </div>
         </div>
       </div>
+        </>
+      ) : (
+        /* MODE 2: EXECUTIVE MONITORING & HISTORY KUNJUNGAN SEKOLAH SE-KOTA KENDARI */
+        <div className="space-y-6">
+          {/* 4 Kartu Ringkasan Eksekutif Sekolah */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex items-start justify-between">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                  Sekolah Terintegrasi
+                </p>
+                <p className="text-3xl font-extrabold text-[#0F2C59] mt-1">
+                  {sekolahList.length}{" "}
+                  <span className="text-xs font-semibold text-slate-500">
+                    sekolah
+                  </span>
+                </p>
+                <p className="text-xs text-[#1E40AF] font-bold mt-2">
+                  TK/PAUD, SD &amp; SMP Kota Kendari
+                </p>
+              </div>
+              <div className="w-11 h-11 rounded-2xl bg-blue-50 text-[#1E40AF] flex items-center justify-center">
+                <School className="w-6 h-6" />
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex items-start justify-between">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                  Kunjungan Sekolah Hari Ini
+                </p>
+                <p className="text-3xl font-extrabold text-[#1E40AF] mt-1">
+                  {todaySchoolVisits.length}{" "}
+                  <span className="text-xs font-semibold text-slate-500">
+                    tamu
+                  </span>
+                </p>
+                <p className="text-xs text-emerald-700 font-bold mt-2">
+                  Total Bulan Ini: {monthSchoolVisits.length} Tamu
+                </p>
+              </div>
+              <div className="w-11 h-11 rounded-2xl bg-indigo-50 text-indigo-700 flex items-center justify-center">
+                <Users className="w-6 h-6" />
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex items-start justify-between">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                  Sekolah Paling Aktif
+                </p>
+                <p className="text-lg font-extrabold text-[#0F2C59] mt-1 line-clamp-1">
+                  {busiestSchool && busiestSchool.jumlah > 0
+                    ? busiestSchool.namaLengkap
+                    : "Belum Ada Kunjungan"}
+                </p>
+                <p className="text-xs text-slate-500 font-semibold mt-2">
+                  {busiestSchool ? `${busiestSchool.jumlah} Total Tamu` : "-"}
+                </p>
+              </div>
+              <div className="w-11 h-11 rounded-2xl bg-amber-50 text-[#F59E0B] flex items-center justify-center">
+                <TrendingUp className="w-6 h-6" />
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex items-start justify-between">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                  Kepuasan Layanan Sekolah
+                </p>
+                <div className="flex items-baseline gap-1.5 mt-1">
+                  <p className="text-3xl font-extrabold text-teal-600">
+                    {avgSchoolRating.count > 0 ? avgSchoolRating.avg : "-"}
+                  </p>
+                  <span className="text-xs font-bold text-slate-500">
+                    / 4.00
+                  </span>
+                </div>
+                <p className="text-xs text-teal-700 font-bold mt-2">
+                  {avgSchoolRating.count} Penilaian Tamu Sekolah
+                </p>
+              </div>
+              <div className="w-11 h-11 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center">
+                <Star className="w-6 h-6" />
+              </div>
+            </div>
+          </div>
+
+          {/* Grafik Distribusi Kunjungan per Sekolah & Daftar Sekolah */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div className="lg:col-span-7 bg-white rounded-3xl p-6 shadow-sm border border-slate-200">
+              <div className="mb-4">
+                <h3 className="font-extrabold text-base text-[#0F2C59] flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-[#1E40AF]" />
+                  <span>Grafik Volume Kunjungan Tamu per Sekolah</span>
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Perbandingan jumlah tamu yang tercatat pada buku tamu digital
+                  masing-masing sekolah
+                </p>
+              </div>
+              <div className="h-72 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={schoolDistribution}
+                    margin={{ top: 10, right: 15, left: 0, bottom: 25 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                    <XAxis
+                      dataKey="nama"
+                      tick={{ fontSize: 10, fill: "#334155" }}
+                      interval={0}
+                      angle={-15}
+                      textAnchor="end"
+                    />
+                    <YAxis
+                      allowDecimals={false}
+                      tick={{ fontSize: 11, fill: "#334155" }}
+                    />
+                    <Tooltip />
+                    <Bar
+                      dataKey="jumlah"
+                      name="Total Tamu Sekolah"
+                      fill="#1E40AF"
+                      radius={[8, 8, 0, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Pemilih Cepat Sekolah untuk Melihat History */}
+            <div className="lg:col-span-5 bg-white rounded-3xl p-6 shadow-sm border border-slate-200 flex flex-col justify-between space-y-4">
+              <div>
+                <div className="flex items-center justify-between">
+                  <h3 className="font-extrabold text-base text-[#0F2C59] flex items-center gap-2">
+                    <Eye className="w-5 h-5 text-[#F59E0B]" />
+                    <span>Pilih Sekolah (Pantau History)</span>
+                  </h3>
+                  {selectedSekolahId !== "ALL" && (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedSekolahId("ALL")}
+                      className="text-xs font-bold text-rose-600 hover:underline"
+                    >
+                      Semua Sekolah
+                    </button>
+                  )}
+                </div>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Klik nama sekolah untuk menyaring riwayat kunjungan tamu
+                  sekolah tersebut di bawah
+                </p>
+              </div>
+
+              <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                {sekolahList.map((s) => {
+                  const total = kunjunganSekolahList.filter(
+                    (k) => k.sekolah_id === s.id
+                  ).length;
+                  const active = selectedSekolahId === s.id;
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() =>
+                        setSelectedSekolahId(active ? "ALL" : s.id)
+                      }
+                      className={`w-full p-3 rounded-2xl border text-left transition flex items-center justify-between gap-2 ${
+                        active
+                          ? "border-[#1E40AF] bg-blue-50 text-[#0F2C59] shadow-sm"
+                          : "border-slate-200 hover:border-slate-300 bg-slate-50/70"
+                      }`}
+                    >
+                      <div className="min-w-0">
+                        <p className="font-extrabold text-xs text-[#0F2C59] truncate">
+                          {s.nama_sekolah}
+                        </p>
+                        <p className="text-[11px] text-slate-500">
+                          {s.jenjang} &bull; NPSN {s.npsn} &bull; Kepsek:{" "}
+                          {s.kepala_sekolah} ({s.status_kepsek})
+                        </p>
+                      </div>
+                      <span className="shrink-0 px-2.5 py-1 rounded-xl bg-[#0F2C59] text-[#F59E0B] font-extrabold text-xs">
+                        {total} Tamu
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Tabel & Filter Riwayat Kunjungan Masing-Masing Sekolah (Read-Only Kepala Dinas) */}
+          <div className="bg-white rounded-3xl shadow-md border-2 border-[#0F2C59] overflow-hidden">
+            <div className="bg-[#0F2C59] text-white px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b-2 border-[#F59E0B]">
+              <div className="flex items-center gap-2.5">
+                <ShieldCheck className="w-5 h-5 text-[#F59E0B]" />
+                <div>
+                  <h2 className="font-extrabold text-base">
+                    History Kunjungan Tamu Sekolah{" "}
+                    {selectedSekolahId !== "ALL"
+                      ? `— ${sekolahMap.get(selectedSekolahId)?.nama_sekolah}`
+                      : "(Seluruh Sekolah se-Kota Kendari)"}
+                  </h2>
+                  <p className="text-xs text-blue-200">
+                    Pemantauan eksekutif real-time (Read-Only). Pengelolaan data
+                    dilakukan oleh masing-masing Admin Sekolah.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    exportKunjunganSekolahToPDF(
+                      filteredKunjunganSekolah,
+                      sekolahList,
+                      {
+                        targetSekolah:
+                          selectedSekolahId !== "ALL"
+                            ? sekolahMap.get(selectedSekolahId)
+                            : undefined,
+                        periodeLabel: filterDateSekolah || "Semua Periode",
+                      }
+                    )
+                  }
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>PDF</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    exportKunjunganSekolahToExcel(
+                      filteredKunjunganSekolah,
+                      sekolahList,
+                      selectedSekolahId !== "ALL"
+                        ? sekolahMap.get(selectedSekolahId)
+                        : undefined
+                    )
+                  }
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow"
+                >
+                  <FileSpreadsheet className="w-3.5 h-3.5" />
+                  <span>Excel</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Filter Bar */}
+            <div className="p-4 bg-slate-50 border-b border-slate-200 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
+              <div className="relative">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={searchSekolahVisit}
+                  onChange={(e) => setSearchSekolahVisit(e.target.value)}
+                  placeholder="Cari tamu / sekolah / NPSN..."
+                  className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-300 text-xs bg-white outline-none"
+                />
+              </div>
+
+              <select
+                value={filterJenjangSekolah}
+                onChange={(e) => setFilterJenjangSekolah(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs bg-white outline-none"
+              >
+                <option value="ALL">Semua Jenjang (TK/SD/SMP)</option>
+                <option value="SMP">Jenjang SMP</option>
+                <option value="SD">Jenjang SD</option>
+                <option value="TK/PAUD">Jenjang TK/PAUD</option>
+              </select>
+
+              <select
+                value={filterKecamatanSekolah}
+                onChange={(e) => setFilterKecamatanSekolah(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs bg-white outline-none"
+              >
+                <option value="ALL">Semua Kecamatan</option>
+                {KECAMATAN_KENDARI_LIST.map((kec) => (
+                  <option key={kec} value={kec}>
+                    Kec. {kec}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={selectedSekolahId}
+                onChange={(e) => setSelectedSekolahId(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs bg-white outline-none"
+              >
+                <option value="ALL">Semua Sekolah ({sekolahList.length})</option>
+                {sekolahList.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.nama_sekolah} ({s.npsn})
+                  </option>
+                ))}
+              </select>
+
+              <input
+                type="date"
+                value={filterDateSekolah}
+                onChange={(e) => setFilterDateSekolah(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs bg-white outline-none"
+              />
+            </div>
+
+            {/* Daftar History Kunjungan Sekolah */}
+            <div className="divide-y divide-slate-100">
+              {filteredKunjunganSekolah.length === 0 ? (
+                <div className="p-10 text-center text-slate-400 text-sm">
+                  Belum ada riwayat kunjungan tamu pada filter sekolah yang
+                  dipilih.
+                </div>
+              ) : (
+                filteredKunjunganSekolah.map((k) => {
+                  const sek = sekolahMap.get(k.sekolah_id);
+                  return (
+                    <div
+                      key={k.id}
+                      className="p-5 hover:bg-slate-50 transition flex flex-col lg:flex-row lg:items-center justify-between gap-4"
+                    >
+                      <div className="flex items-start gap-4">
+                        {k.foto_url ? (
+                          <img
+                            src={k.foto_url}
+                            alt={k.nama_tamu}
+                            className="w-12 h-12 rounded-2xl object-cover border border-slate-300 shrink-0"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 rounded-2xl bg-[#0F2C59] text-[#F59E0B] font-extrabold text-base flex items-center justify-center shrink-0">
+                            {k.nama_tamu.charAt(0)}
+                          </div>
+                        )}
+                        <div className="space-y-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="px-2.5 py-0.5 rounded-lg bg-[#0F2C59] text-[#F59E0B] font-extrabold text-xs">
+                              {sek?.nama_sekolah} (NPSN: {sek?.npsn})
+                            </span>
+                            <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-xs font-bold">
+                              {k.kode_tiket}
+                            </span>
+                            <span className="px-2.5 py-0.5 rounded-full bg-blue-100 text-[#1E40AF] text-[11px] font-bold">
+                              {k.kategori_tamu}
+                            </span>
+                            <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold">
+                              Status: {k.status}
+                            </span>
+                          </div>
+
+                          <h3 className="font-extrabold text-sm sm:text-base text-slate-900">
+                            {k.nama_tamu}{" "}
+                            <span className="font-medium text-xs text-slate-500">
+                              ({k.instansi_asal})
+                            </span>
+                          </h3>
+
+                          <p className="text-xs text-slate-600">
+                            Tujuan di Sekolah:{" "}
+                            <strong className="text-[#1E40AF]">
+                              {k.tujuan_unit}
+                            </strong>{" "}
+                            &bull; Tanggal: <strong>{k.tanggal}</strong> (
+                            {new Date(k.waktu_masuk).toLocaleTimeString(
+                              "id-ID",
+                              { hour: "2-digit", minute: "2-digit" }
+                            )}{" "}
+                            WITA)
+                          </p>
+
+                          <p className="text-xs text-slate-700 bg-slate-100 px-3 py-2 rounded-xl border border-slate-200 mt-1">
+                            <strong>Keperluan:</strong> {k.keperluan}
+                          </p>
+
+                          {k.catatan_sekolah && (
+                            <p className="text-xs text-[#0F2C59] bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-200">
+                              <strong>Catatan Sekolah:</strong>{" "}
+                              {k.catatan_sekolah}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {k.nilai_kepuasan && (
+                        <div className="shrink-0 bg-amber-50 border border-amber-200 px-3.5 py-2 rounded-2xl text-right">
+                          <div className="flex items-center gap-1 justify-end text-amber-700 font-extrabold text-xs">
+                            <Star className="w-4 h-4 fill-[#F59E0B] text-[#F59E0B]" />
+                            <span>Rating: {k.nilai_kepuasan} / 4</span>
+                          </div>
+                          {k.saran_masukan && (
+                            <p className="text-[11px] text-slate-600 italic mt-0.5 max-w-xs">
+                              &ldquo;{k.saran_masukan}&rdquo;
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal Disposisi Langsung Kepala Dinas */}
       {disposisiModalItem && (

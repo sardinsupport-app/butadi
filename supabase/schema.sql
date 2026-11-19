@@ -146,90 +146,80 @@ VALUES
   ('Super Administrator IT Dikbud', '199001012015031001', 'superadmin', NULL, 'hashed_admin_pass')
 ON CONFLICT (nip) DO NOTHING;
 
--- CONTOH DATA KUNJUNGAN AWAL
-INSERT INTO public.kunjungan (
-  id, kode_tiket, tanggal, waktu_masuk, waktu_keluar, nik_nip, nama_tamu,
-  instansi_asal, kategori_tamu, no_wa, bidang_id, keperluan, status, catatan_disposisi_kadis
-)
-VALUES
-  (
-    '22222222-2222-4222-8222-222222222201',
-    'BTD-KDI-001',
-    CURRENT_DATE,
-    NOW() - INTERVAL '2 hours',
-    NOW() - INTERVAL '1 hour 15 minutes',
-    '198103152006041009',
-    'Drs. Muh. Ruslan, M.Pd.',
-    'SMP Negeri 1 Kendari',
-    'Guru/Kepsek',
-    '081241234567',
-    '11111111-1111-4111-8111-111111111103',
-    'Verifikasi berkas pengusulan Tunjangan Profesi Guru (TPG) Semester Ganjil',
-    'Selesai',
-    NULL
-  ),
-  (
-    '22222222-2222-4222-8222-222222222202',
-    'BTD-KDI-002',
-    CURRENT_DATE,
-    NOW() - INTERVAL '45 minutes',
-    NULL,
-    '197906212005012014',
-    'Hj. Hasniati, S.Pd.',
-    'SD Negeri 2 Baruga',
-    'Guru/Kepsek',
-    '085241889900',
-    '11111111-1111-4111-8111-111111111101',
-    'Audiensi persiapan Lomba Sekolah Sehat Tingkat Provinsi Sultra & penandatanganan MoU komite',
-    'Menunggu',
-    NULL
-  ),
-  (
-    '22222222-2222-4222-8222-222222222203',
-    'BTD-KDI-003',
-    CURRENT_DATE,
-    NOW() - INTERVAL '25 minutes',
-    NULL,
-    '7471081209880002',
-    'Irwan Saputra, S.T.',
-    'Orang Tua Siswa (Kec. Kadia)',
-    'Umum',
-    '082187654321',
-    '11111111-1111-4111-8111-111111111105',
-    'Konsultasi mutasi siswa pindah rayon masuk ke SMP Negeri 9 Kendari',
-    'Dilayani',
-    NULL
-  ),
-  (
-    '22222222-2222-4222-8222-222222222204',
-    'BTD-KDI-004',
-    CURRENT_DATE,
-    NOW() - INTERVAL '15 minutes',
-    NULL,
-    '198411102010011005',
-    'La Ode Hasanuddin, S.Sn., M.Pd.',
-    'Sanggar Seni Kalosara Kendari',
-    'Instansi',
-    '081340556677',
-    '11111111-1111-4111-8111-111111111101',
-    'Koordinasi Festival Budaya Lulo & Pameran Cagar Budaya Kota Kendari',
-    'Menunggu',
-    NULL
-  )
-ON CONFLICT (id) DO NOTHING;
+-- ============================================================================
+-- 5. TABEL MASTER SEKOLAH SE-KOTA KENDARI (EKOSISTEM TERINTEGRASI)
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS public.sekolah (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  npsn VARCHAR(20) UNIQUE NOT NULL,
+  nama_sekolah VARCHAR(150) NOT NULL,
+  jenjang VARCHAR(20) NOT NULL DEFAULT 'SMP'
+    CHECK (jenjang IN ('TK/PAUD', 'SD', 'SMP')),
+  kecamatan VARCHAR(60) NOT NULL DEFAULT 'Kadia',
+  alamat TEXT NOT NULL DEFAULT '',
+  kepala_sekolah VARCHAR(120) NOT NULL,
+  nip_kepsek VARCHAR(40),
+  no_wa_sekolah VARCHAR(30),
+  passcode VARCHAR(50) NOT NULL DEFAULT 'sekolah1010',
+  status_kepsek VARCHAR(20) NOT NULL DEFAULT 'Tersedia'
+    CHECK (status_kepsek IN ('Tersedia', 'Rapat', 'Dinas Luar')),
+  unit_layanan JSONB NOT NULL DEFAULT '["Kepala Sekolah", "Tata Usaha / Operator", "Wakil Kepala Sekolah", "Guru BK / Piket", "Wali Kelas / Guru Mapel"]'::jsonb,
+  aktif BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 
--- CONTOH DATA SURVEI KEPUASAN MASYARAKAT (SKM)
-INSERT INTO public.skm_responses (
-  id, kunjungan_id, bidang_id,
-  u1_persyaratan, u2_prosedur, u3_waktu, u4_biaya, u5_produk,
-  u6_kompetensi, u7_perilaku, u8_sarpras, u9_pengaduan, saran_masukan
+-- 6. TABEL KUNJUNGAN BUKU TAMU SEKOLAH
+CREATE TABLE IF NOT EXISTS public.kunjungan_sekolah (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  sekolah_id UUID NOT NULL REFERENCES public.sekolah(id) ON DELETE CASCADE,
+  kode_tiket VARCHAR(40) UNIQUE NOT NULL,
+  tanggal DATE NOT NULL DEFAULT CURRENT_DATE,
+  waktu_masuk TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  waktu_keluar TIMESTAMPTZ,
+  nik_nip VARCHAR(40) NOT NULL,
+  nama_tamu VARCHAR(120) NOT NULL,
+  instansi_asal VARCHAR(150) NOT NULL,
+  kategori_tamu VARCHAR(40) NOT NULL DEFAULT 'Orang Tua / Wali'
+    CHECK (kategori_tamu IN ('Orang Tua / Wali', 'Pengawas / Dikbud', 'Instansi / Mitra', 'Umum')),
+  no_wa VARCHAR(30) NOT NULL,
+  tujuan_unit VARCHAR(100) NOT NULL DEFAULT 'Kepala Sekolah',
+  keperluan TEXT NOT NULL,
+  foto_url TEXT,
+  status VARCHAR(30) NOT NULL DEFAULT 'Menunggu'
+    CHECK (status IN ('Menunggu', 'Dilayani', 'Selesai', 'Batal')),
+  catatan_sekolah TEXT,
+  nilai_kepuasan SMALLINT CHECK (nilai_kepuasan BETWEEN 1 AND 4),
+  saran_masukan TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_sekolah_npsn ON public.sekolah(npsn);
+CREATE INDEX IF NOT EXISTS idx_sekolah_jenjang ON public.sekolah(jenjang);
+CREATE INDEX IF NOT EXISTS idx_sekolah_kecamatan ON public.sekolah(kecamatan);
+CREATE INDEX IF NOT EXISTS idx_kunjungan_sekolah_sekolah_id ON public.kunjungan_sekolah(sekolah_id);
+CREATE INDEX IF NOT EXISTS idx_kunjungan_sekolah_tanggal ON public.kunjungan_sekolah(tanggal);
+CREATE INDEX IF NOT EXISTS idx_kunjungan_sekolah_nik_nip ON public.kunjungan_sekolah(nik_nip);
+CREATE INDEX IF NOT EXISTS idx_kunjungan_sekolah_status ON public.kunjungan_sekolah(status);
+
+ALTER TABLE public.sekolah ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.kunjungan_sekolah ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Allow public all on sekolah" ON public.sekolah;
+CREATE POLICY "Allow public all on sekolah" ON public.sekolah FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow public all on kunjungan_sekolah" ON public.kunjungan_sekolah;
+CREATE POLICY "Allow public all on kunjungan_sekolah" ON public.kunjungan_sekolah FOR ALL USING (true) WITH CHECK (true);
+
+INSERT INTO public.sekolah (
+  id, npsn, nama_sekolah, jenjang, kecamatan, alamat, kepala_sekolah, nip_kepsek, no_wa_sekolah, passcode, status_kepsek
 )
 VALUES
-  (
-    '33333333-3333-4333-8333-333333333301',
-    '22222222-2222-4222-8222-222222222201',
-    '11111111-1111-4111-8111-111111111103',
-    4, 4, 4, 4, 4, 4, 4, 3, 4,
-    'Pelayanan di Bidang GTK sangat cepat, ramah, dan sekarang pakai sistem tiket digital jadi lebih tertib tanpa antre lama.'
-  )
-ON CONFLICT (id) DO NOTHING;
+  ('44444444-4444-4444-8444-444444444401', '40402601', 'SMP Negeri 1 Kendari', 'SMP', 'Mandonga', 'Jl. Jend. Ahmad Yani No. 17, Kota Kendari', 'Drs. Muh. Ruslan, M.Pd.', '19700512 199603 1 004', '08114001001', 'smpn1kdi', 'Tersedia'),
+  ('44444444-4444-4444-8444-444444444402', '40402602', 'SMP Negeri 2 Kendari', 'SMP', 'Kendari Barat', 'Jl. Sultan Hasanuddin No. 48, Tipulu, Kota Kendari', 'Hj. Sitti Maemunah, S.Pd., M.Pd.', '19720814 199802 2 003', '08114001002', 'smpn2kdi', 'Tersedia'),
+  ('44444444-4444-4444-8444-444444444403', '40402609', 'SMP Negeri 9 Kendari', 'SMP', 'Kadia', 'Jl. Sao-Sao, Bende, Kec. Kadia, Kota Kendari', 'Milwan, S.Pd., M.Pd.', '19741109 199903 1 005', '08114001009', 'smpn9kdi', 'Tersedia'),
+  ('44444444-4444-4444-8444-444444444404', '40402604', 'SMP Negeri 4 Kendari', 'SMP', 'Wua-Wua', 'Jl. Kijang No. 5, Rahandouna, Kota Kendari', 'La Ode Muh.Kurdin, S.Pd., M.Pd.', '19710321 199702 1 002', '08114001004', 'smpn4kdi', 'Tersedia'),
+  ('44444444-4444-4444-8444-444444444405', '40402501', 'SD Negeri 1 Kendari', 'SD', 'Kendari', 'Jl. Ir. H. Alala, Kandai, Kota Kendari', 'Hj. Hasniati, S.Pd., M.Pd.', '19750621 200012 2 004', '08114002001', 'sdn1kdi', 'Tersedia'),
+  ('44444444-4444-4444-8444-444444444406', '40402502', 'SD Negeri 2 Baruga', 'SD', 'Baruga', 'Jl. Brigjen M. Yoenoes, Lepo-Lepo, Kec. Baruga', 'Wa Ode Siti Aisyah, S.Pd.', '19780411 200312 2 007', '08114002002', 'sdn2baruga', 'Tersedia'),
+  ('44444444-4444-4444-8444-444444444407', '40402584', 'SD Negeri 84 Kendari', 'SD', 'Kambu', 'Jl. Martandu, Kambu, Kota Kendari', 'H. Abdul Rahim, S.Pd., M.M.', '19730918 199803 1 006', '08114002084', 'sdn84kdi', 'Tersedia'),
+  ('44444444-4444-4444-8444-444444444408', '40402701', 'TK Negeri Pembina Kota Kendari', 'TK/PAUD', 'Kadia', 'Jl. Balaikota III, Pondambea, Kec. Kadia, Kota Kendari', 'Hj. Nurhayati, S.Pd.AUD.', '19761205 200212 2 003', '08114003001', 'tknpembina', 'Tersedia')
+ON CONFLICT (npsn) DO NOTHING;

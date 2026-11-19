@@ -11,17 +11,24 @@ import React, {
 import {
   Bidang,
   KategoriTamu,
+  KategoriTamuSekolah,
   Kunjungan,
+  KunjunganSekolah,
+  Sekolah,
   SkmResponse,
   StatusKunjungan,
+  StatusKunjunganSekolah,
   StatusPejabat,
 } from "@/types/butadi";
 import {
+  DEFAULT_UNIT_LAYANAN_SEKOLAH,
   getInitialKunjunganSeed,
+  getInitialKunjunganSekolahSeed,
   getInitialSkmSeed,
   getSupabaseClient,
   getSupabaseConfig,
   INITIAL_BIDANG_SEED,
+  INITIAL_SEKOLAH_SEED,
   saveBrowserSupabaseConfig,
 } from "@/lib/supabase";
 import { playNotificationBell } from "@/lib/sound";
@@ -45,6 +52,19 @@ interface CreateKunjunganInput {
   foto_url: string | null;
 }
 
+export interface CreateKunjunganSekolahInput {
+  sekolah_id: string;
+  npsn: string;
+  nik_nip: string;
+  nama_tamu: string;
+  instansi_asal: string;
+  kategori_tamu: KategoriTamuSekolah;
+  no_wa: string;
+  tujuan_unit: string;
+  keperluan: string;
+  foto_url: string | null;
+}
+
 interface SubmitSkmInput {
   kunjungan_id?: string | null;
   bidang_id: string;
@@ -64,6 +84,8 @@ interface ButadiContextValue {
   bidangList: Bidang[];
   kunjunganList: Kunjungan[];
   skmList: SkmResponse[];
+  sekolahList: Sekolah[];
+  kunjunganSekolahList: KunjunganSekolah[];
   isLoading: boolean;
   isSupabaseConnected: boolean;
   supabaseSource: "env" | "browser" | "none";
@@ -95,6 +117,30 @@ interface ButadiContextValue {
   ) => Promise<Bidang>;
   deleteBidang: (id: string) => Promise<void>;
   submitSkm: (input: SubmitSkmInput) => Promise<SkmResponse>;
+  // Operasi Ekosistem Sekolah
+  createKunjunganSekolah: (
+    input: CreateKunjunganSekolahInput
+  ) => Promise<KunjunganSekolah>;
+  updateStatusKunjunganSekolah: (
+    id: string,
+    status: StatusKunjunganSekolah,
+    extra?: {
+      catatan_sekolah?: string | null;
+      nilai_kepuasan?: number | null;
+      saran_masukan?: string | null;
+    }
+  ) => Promise<KunjunganSekolah | null>;
+  deleteKunjunganSekolah: (id: string) => Promise<boolean>;
+  findVisitorSekolahByNikNip: (
+    nikNip: string
+  ) => Promise<Pick<
+    KunjunganSekolah,
+    "nama_tamu" | "instansi_asal" | "kategori_tamu" | "no_wa"
+  > | null>;
+  saveSekolah: (
+    sekolah: Omit<Sekolah, "id"> & { id?: string }
+  ) => Promise<Sekolah>;
+  deleteSekolah: (id: string) => Promise<void>;
   configureSupabase: (url: string, anonKey: string) => Promise<boolean>;
   seedInitialDataToSupabase: () => Promise<{ ok: boolean; message: string }>;
 }
@@ -104,6 +150,8 @@ const ButadiContext = createContext<ButadiContextValue | undefined>(undefined);
 const LS_BIDANG = "butadi_data_bidang_v2";
 const LS_KUNJUNGAN = "butadi_data_kunjungan_v2";
 const LS_SKM = "butadi_data_skm_v2";
+const LS_SEKOLAH = "butadi_data_sekolah_v2";
+const LS_KUNJUNGAN_SEKOLAH = "butadi_data_kunjungan_sekolah_v2";
 
 function generateUUID(): string {
   if (typeof crypto !== "undefined" && crypto.randomUUID) {
@@ -120,6 +168,10 @@ export function ButadiProvider({ children }: { children: React.ReactNode }) {
   const [bidangList, setBidangList] = useState<Bidang[]>(INITIAL_BIDANG_SEED);
   const [kunjunganList, setKunjunganList] = useState<Kunjungan[]>([]);
   const [skmList, setSkmList] = useState<SkmResponse[]>([]);
+  const [sekolahList, setSekolahList] = useState<Sekolah[]>(INITIAL_SEKOLAH_SEED);
+  const [kunjunganSekolahList, setKunjunganSekolahList] = useState<
+    KunjunganSekolah[]
+  >([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSupabaseConnected, setIsSupabaseConnected] =
     useState<boolean>(false);
@@ -171,11 +223,20 @@ export function ButadiProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const persistLocal = useCallback(
-    (b?: Bidang[], k?: Kunjungan[], s?: SkmResponse[]) => {
+    (
+      b?: Bidang[],
+      k?: Kunjungan[],
+      s?: SkmResponse[],
+      sek?: Sekolah[],
+      kSek?: KunjunganSekolah[]
+    ) => {
       if (typeof window === "undefined") return;
       if (b) localStorage.setItem(LS_BIDANG, JSON.stringify(b));
       if (k) localStorage.setItem(LS_KUNJUNGAN, JSON.stringify(k));
       if (s) localStorage.setItem(LS_SKM, JSON.stringify(s));
+      if (sek) localStorage.setItem(LS_SEKOLAH, JSON.stringify(sek));
+      if (kSek)
+        localStorage.setItem(LS_KUNJUNGAN_SEKOLAH, JSON.stringify(kSek));
     },
     []
   );
@@ -186,24 +247,36 @@ export function ButadiProvider({ children }: { children: React.ReactNode }) {
       const rawB = localStorage.getItem(LS_BIDANG);
       const rawK = localStorage.getItem(LS_KUNJUNGAN);
       const rawS = localStorage.getItem(LS_SKM);
+      const rawSek = localStorage.getItem(LS_SEKOLAH);
+      const rawKSek = localStorage.getItem(LS_KUNJUNGAN_SEKOLAH);
 
       const b = rawB ? (JSON.parse(rawB) as Bidang[]) : INITIAL_BIDANG_SEED;
       const k = rawK
         ? (JSON.parse(rawK) as Kunjungan[])
         : getInitialKunjunganSeed();
       const s = rawS ? (JSON.parse(rawS) as SkmResponse[]) : getInitialSkmSeed();
+      const sek = rawSek
+        ? (JSON.parse(rawSek) as Sekolah[])
+        : INITIAL_SEKOLAH_SEED;
+      const kSek = rawKSek
+        ? (JSON.parse(rawKSek) as KunjunganSekolah[])
+        : getInitialKunjunganSekolahSeed();
 
       setBidangList(b);
       setKunjunganList(k);
       setSkmList(s);
+      setSekolahList(sek);
+      setKunjunganSekolahList(kSek);
 
-      if (!rawB || !rawK || !rawS) {
-        persistLocal(b, k, s);
+      if (!rawB || !rawK || !rawS || !rawSek || !rawKSek) {
+        persistLocal(b, k, s, sek, kSek);
       }
     } catch {
       setBidangList(INITIAL_BIDANG_SEED);
       setKunjunganList(getInitialKunjunganSeed());
       setSkmList(getInitialSkmSeed());
+      setSekolahList(INITIAL_SEKOLAH_SEED);
+      setKunjunganSekolahList(getInitialKunjunganSekolahSeed());
     }
   }, [persistLocal]);
 
@@ -221,7 +294,13 @@ export function ButadiProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      const [resBidang, resKunjungan, resSkm] = await Promise.all([
+      const [
+        resBidang,
+        resKunjungan,
+        resSkm,
+        resSekolah,
+        resKunjunganSekolah,
+      ] = await Promise.all([
         supabase
           .from("bidang")
           .select("*")
@@ -234,6 +313,14 @@ export function ButadiProvider({ children }: { children: React.ReactNode }) {
           .from("skm_responses")
           .select("*")
           .order("created_at", { ascending: false }),
+        supabase
+          .from("sekolah")
+          .select("*")
+          .order("nama_sekolah", { ascending: true }),
+        supabase
+          .from("kunjungan_sekolah")
+          .select("*")
+          .order("waktu_masuk", { ascending: false }),
       ]);
 
       if (resBidang.error) throw resBidang.error;
@@ -242,7 +329,6 @@ export function ButadiProvider({ children }: { children: React.ReactNode }) {
 
       let finalBidang = (resBidang.data || []) as Bidang[];
       if (finalBidang.length === 0) {
-        // Auto-seed bidang if table is empty
         const { data: seededB } = await supabase
           .from("bidang")
           .upsert(INITIAL_BIDANG_SEED)
@@ -257,10 +343,37 @@ export function ButadiProvider({ children }: { children: React.ReactNode }) {
       const finalKunjungan = (resKunjungan.data || []) as Kunjungan[];
       const finalSkm = (resSkm.data || []) as SkmResponse[];
 
+      let finalSekolah = (resSekolah.data || []) as Sekolah[];
+      if (!resSekolah.error && finalSekolah.length === 0) {
+        const { data: seededSek } = await supabase
+          .from("sekolah")
+          .upsert(INITIAL_SEKOLAH_SEED, { onConflict: "npsn" })
+          .select("*");
+        if (seededSek && seededSek.length > 0) {
+          finalSekolah = seededSek as Sekolah[];
+        } else {
+          finalSekolah = INITIAL_SEKOLAH_SEED;
+        }
+      } else if (resSekolah.error) {
+        finalSekolah = INITIAL_SEKOLAH_SEED;
+      }
+
+      const finalKunjunganSekolah = !resKunjunganSekolah.error
+        ? ((resKunjunganSekolah.data || []) as KunjunganSekolah[])
+        : [];
+
       setBidangList(finalBidang);
       setKunjunganList(finalKunjungan);
       setSkmList(finalSkm);
-      persistLocal(finalBidang, finalKunjungan, finalSkm);
+      setSekolahList(finalSekolah);
+      setKunjunganSekolahList(finalKunjunganSekolah);
+      persistLocal(
+        finalBidang,
+        finalKunjungan,
+        finalSkm,
+        finalSekolah,
+        finalKunjunganSekolah
+      );
 
       setIsSupabaseConnected(true);
       setSupabaseError(null);
@@ -314,7 +427,7 @@ export function ButadiProvider({ children }: { children: React.ReactNode }) {
           if (payload.eventType === "INSERT") {
             const baru = payload.new as Kunjungan;
             pushToast(
-              "Tamu Baru Check-In!",
+              "Tamu Baru Check-In (Kantor Dinas)!",
               `${baru.nama_tamu} (${baru.instansi_asal}) - Tiket ${baru.kode_tiket}`,
               "info",
               true
@@ -348,6 +461,29 @@ export function ButadiProvider({ children }: { children: React.ReactNode }) {
             "success",
             true
           );
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "sekolah" },
+        () => {
+          refreshData();
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "kunjungan_sekolah" },
+        (payload) => {
+          refreshData();
+          if (payload.eventType === "INSERT") {
+            const baru = payload.new as KunjunganSekolah;
+            pushToast(
+              "Tamu Baru di Sekolah!",
+              `${baru.nama_tamu} - Tiket ${baru.kode_tiket}`,
+              "info",
+              true
+            );
+          }
         }
       )
       .subscribe();
@@ -771,6 +907,358 @@ export function ButadiProvider({ children }: { children: React.ReactNode }) {
     [isSupabaseConnected, persistLocal, broadcastSync, pushToast]
   );
 
+  // ==========================================================================
+  // OPERASI EKOSISTEM BUKU TAMU SEKOLAH SE-KOTA KENDARI
+  // ==========================================================================
+
+  const createKunjunganSekolah = useCallback(
+    async (input: CreateKunjunganSekolahInput): Promise<KunjunganSekolah> => {
+      const today = new Date().toISOString().split("T")[0];
+      const countToday =
+        kunjunganSekolahList.filter(
+          (k) => k.sekolah_id === input.sekolah_id && k.tanggal === today
+        ).length + 1;
+      const padded = String(countToday).padStart(3, "0");
+      const randomSuffix = Math.floor(10 + Math.random() * 90);
+      const kode_tiket = `BTD-${input.npsn}-${padded}${randomSuffix}`;
+
+      const newEntry: KunjunganSekolah = {
+        id: generateUUID(),
+        sekolah_id: input.sekolah_id,
+        kode_tiket,
+        tanggal: today,
+        waktu_masuk: new Date().toISOString(),
+        waktu_keluar: null,
+        nik_nip: input.nik_nip.trim(),
+        nama_tamu: input.nama_tamu.trim(),
+        instansi_asal: input.instansi_asal.trim(),
+        kategori_tamu: input.kategori_tamu,
+        no_wa: input.no_wa.trim(),
+        tujuan_unit: input.tujuan_unit,
+        keperluan: input.keperluan.trim(),
+        foto_url: input.foto_url,
+        status: "Menunggu",
+        catatan_sekolah: null,
+        nilai_kepuasan: null,
+        saran_masukan: null,
+      };
+
+      const supabase = getSupabaseClient();
+      if (supabase && isSupabaseConnected) {
+        const { data, error } = await supabase
+          .from("kunjungan_sekolah")
+          .insert([newEntry])
+          .select("*")
+          .single();
+
+        if (!error && data) {
+          const saved = data as KunjunganSekolah;
+          setKunjunganSekolahList((prev) => {
+            const next = [saved, ...prev];
+            persistLocal(undefined, undefined, undefined, undefined, next);
+            return next;
+          });
+          broadcastSync(
+            "Tamu Baru di Sekolah!",
+            `${saved.nama_tamu} (${saved.kode_tiket})`,
+            true
+          );
+          return saved;
+        }
+      }
+
+      setKunjunganSekolahList((prev) => {
+        const next = [newEntry, ...prev];
+        persistLocal(undefined, undefined, undefined, undefined, next);
+        return next;
+      });
+      pushToast(
+        "Tiket Kunjungan Sekolah Terbit!",
+        `${newEntry.nama_tamu} - Nomor Tiket: ${newEntry.kode_tiket}`,
+        "success",
+        true
+      );
+      broadcastSync(
+        "Tamu Baru di Sekolah!",
+        `${newEntry.nama_tamu} (${newEntry.kode_tiket})`,
+        true
+      );
+      return newEntry;
+    },
+    [
+      kunjunganSekolahList,
+      isSupabaseConnected,
+      persistLocal,
+      broadcastSync,
+      pushToast,
+    ]
+  );
+
+  const updateStatusKunjunganSekolah = useCallback(
+    async (
+      id: string,
+      status: StatusKunjunganSekolah,
+      extra?: {
+        catatan_sekolah?: string | null;
+        nilai_kepuasan?: number | null;
+        saran_masukan?: string | null;
+      }
+    ): Promise<KunjunganSekolah | null> => {
+      const target = kunjunganSekolahList.find((k) => k.id === id);
+      if (!target) return null;
+
+      const waktu_keluar =
+        status === "Selesai" ? new Date().toISOString() : target.waktu_keluar;
+
+      const updatedFields: Partial<KunjunganSekolah> = {
+        status,
+        waktu_keluar,
+        ...(extra?.catatan_sekolah !== undefined
+          ? { catatan_sekolah: extra.catatan_sekolah }
+          : {}),
+        ...(extra?.nilai_kepuasan !== undefined
+          ? { nilai_kepuasan: extra.nilai_kepuasan }
+          : {}),
+        ...(extra?.saran_masukan !== undefined
+          ? { saran_masukan: extra.saran_masukan }
+          : {}),
+      };
+
+      const updatedItem: KunjunganSekolah = { ...target, ...updatedFields };
+
+      const supabase = getSupabaseClient();
+      if (supabase && isSupabaseConnected) {
+        const { data, error } = await supabase
+          .from("kunjungan_sekolah")
+          .update(updatedFields)
+          .eq("id", id)
+          .select("*")
+          .single();
+
+        if (!error && data) {
+          const saved = data as KunjunganSekolah;
+          setKunjunganSekolahList((prev) => {
+            const next = prev.map((k) => (k.id === id ? saved : k));
+            persistLocal(undefined, undefined, undefined, undefined, next);
+            return next;
+          });
+          broadcastSync(
+            `Status Tiket Sekolah ${saved.kode_tiket}`,
+            `${saved.nama_tamu} -> ${saved.status}`,
+            true
+          );
+          return saved;
+        }
+      }
+
+      setKunjunganSekolahList((prev) => {
+        const next = prev.map((k) => (k.id === id ? updatedItem : k));
+        persistLocal(undefined, undefined, undefined, undefined, next);
+        return next;
+      });
+      pushToast(
+        `Status Diperbarui: ${updatedItem.status}`,
+        `Tiket ${updatedItem.kode_tiket} (${updatedItem.nama_tamu})`,
+        "info",
+        true
+      );
+      broadcastSync(
+        `Status Tiket Sekolah ${updatedItem.kode_tiket}`,
+        `${updatedItem.nama_tamu} -> ${updatedItem.status}`,
+        true
+      );
+      return updatedItem;
+    },
+    [
+      kunjunganSekolahList,
+      isSupabaseConnected,
+      persistLocal,
+      broadcastSync,
+      pushToast,
+    ]
+  );
+
+  const deleteKunjunganSekolah = useCallback(
+    async (id: string): Promise<boolean> => {
+      const target = kunjunganSekolahList.find((k) => k.id === id);
+      const supabase = getSupabaseClient();
+      if (supabase && isSupabaseConnected) {
+        try {
+          const { error } = await supabase
+            .from("kunjungan_sekolah")
+            .delete()
+            .eq("id", id);
+          if (error) {
+            pushToast("Gagal Menghapus Data", error.message, "warning");
+            return false;
+          }
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : "Terjadi kesalahan";
+          pushToast("Gagal Menghapus Data", msg, "warning");
+          return false;
+        }
+      }
+
+      setKunjunganSekolahList((prev) => {
+        const next = prev.filter((k) => k.id !== id);
+        persistLocal(undefined, undefined, undefined, undefined, next);
+        return next;
+      });
+
+      pushToast(
+        "Data Tamu Sekolah Dihapus",
+        target
+          ? `Data ${target.nama_tamu} (${target.kode_tiket}) telah dihapus.`
+          : "Data kunjungan sekolah telah dihapus.",
+        "info"
+      );
+      broadcastSync(
+        "Data Tamu Sekolah Dihapus",
+        target ? `Tiket ${target.kode_tiket} dihapus` : "Data dihapus",
+        false
+      );
+      return true;
+    },
+    [
+      kunjunganSekolahList,
+      isSupabaseConnected,
+      persistLocal,
+      broadcastSync,
+      pushToast,
+    ]
+  );
+
+  const findVisitorSekolahByNikNip = useCallback(
+    async (
+      nikNip: string
+    ): Promise<Pick<
+      KunjunganSekolah,
+      "nama_tamu" | "instansi_asal" | "kategori_tamu" | "no_wa"
+    > | null> => {
+      const cleaned = nikNip.trim();
+      if (cleaned.length < 5) return null;
+
+      const supabase = getSupabaseClient();
+      if (supabase && isSupabaseConnected) {
+        const { data } = await supabase
+          .from("kunjungan_sekolah")
+          .select("nama_tamu, instansi_asal, kategori_tamu, no_wa")
+          .eq("nik_nip", cleaned)
+          .order("waktu_masuk", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (data) {
+          return data as Pick<
+            KunjunganSekolah,
+            "nama_tamu" | "instansi_asal" | "kategori_tamu" | "no_wa"
+          >;
+        }
+      }
+
+      const foundLocal = kunjunganSekolahList.find(
+        (k) => k.nik_nip.toLowerCase() === cleaned.toLowerCase()
+      );
+      if (foundLocal) {
+        return {
+          nama_tamu: foundLocal.nama_tamu,
+          instansi_asal: foundLocal.instansi_asal,
+          kategori_tamu: foundLocal.kategori_tamu,
+          no_wa: foundLocal.no_wa,
+        };
+      }
+      return null;
+    },
+    [isSupabaseConnected, kunjunganSekolahList]
+  );
+
+  const saveSekolah = useCallback(
+    async (
+      sekolahInput: Omit<Sekolah, "id"> & { id?: string }
+    ): Promise<Sekolah> => {
+      const item: Sekolah = {
+        id: sekolahInput.id || generateUUID(),
+        npsn: sekolahInput.npsn.trim(),
+        nama_sekolah: sekolahInput.nama_sekolah.trim(),
+        jenjang: sekolahInput.jenjang,
+        kecamatan: sekolahInput.kecamatan.trim(),
+        alamat: sekolahInput.alamat.trim(),
+        kepala_sekolah: sekolahInput.kepala_sekolah.trim(),
+        nip_kepsek: sekolahInput.nip_kepsek?.trim() || "",
+        no_wa_sekolah: sekolahInput.no_wa_sekolah?.trim() || "",
+        passcode: sekolahInput.passcode.trim() || "sekolah1010",
+        status_kepsek: sekolahInput.status_kepsek || "Tersedia",
+        unit_layanan:
+          sekolahInput.unit_layanan && sekolahInput.unit_layanan.length > 0
+            ? sekolahInput.unit_layanan
+            : DEFAULT_UNIT_LAYANAN_SEKOLAH,
+        aktif: sekolahInput.aktif ?? true,
+      };
+
+      const supabase = getSupabaseClient();
+      if (supabase && isSupabaseConnected) {
+        const { data, error } = await supabase
+          .from("sekolah")
+          .upsert([item])
+          .select("*")
+          .single();
+        if (!error && data) {
+          const saved = data as Sekolah;
+          setSekolahList((prev) => {
+            const exists = prev.some((s) => s.id === saved.id);
+            const next = exists
+              ? prev.map((s) => (s.id === saved.id ? saved : s))
+              : [...prev, saved];
+            persistLocal(undefined, undefined, undefined, next, undefined);
+            return next;
+          });
+          broadcastSync(
+            "Data Sekolah Diperbarui",
+            `${saved.nama_sekolah} (${saved.npsn})`,
+            false
+          );
+          return saved;
+        }
+      }
+
+      setSekolahList((prev) => {
+        const exists = prev.some((s) => s.id === item.id);
+        const next = exists
+          ? prev.map((s) => (s.id === item.id ? item : s))
+          : [...prev, item];
+        persistLocal(undefined, undefined, undefined, next, undefined);
+        return next;
+      });
+      broadcastSync(
+        "Data Sekolah Diperbarui",
+        `${item.nama_sekolah} (${item.npsn})`,
+        false
+      );
+      return item;
+    },
+    [isSupabaseConnected, persistLocal, broadcastSync]
+  );
+
+  const deleteSekolah = useCallback(
+    async (id: string) => {
+      const supabase = getSupabaseClient();
+      if (supabase && isSupabaseConnected) {
+        await supabase.from("sekolah").delete().eq("id", id);
+      }
+      setSekolahList((prev) => {
+        const next = prev.filter((s) => s.id !== id);
+        persistLocal(undefined, undefined, undefined, next, undefined);
+        return next;
+      });
+      setKunjunganSekolahList((prev) => {
+        const next = prev.filter((k) => k.sekolah_id !== id);
+        persistLocal(undefined, undefined, undefined, undefined, next);
+        return next;
+      });
+      broadcastSync();
+    },
+    [isSupabaseConnected, persistLocal, broadcastSync]
+  );
+
   const configureSupabase = useCallback(
     async (url: string, anonKey: string): Promise<boolean> => {
       saveBrowserSupabaseConfig(url, anonKey);
@@ -808,21 +1296,15 @@ export function ButadiProvider({ children }: { children: React.ReactNode }) {
         .upsert(INITIAL_BIDANG_SEED);
       if (errB) throw errB;
 
-      const { error: errK } = await supabase
-        .from("kunjungan")
-        .upsert(getInitialKunjunganSeed());
-      if (errK) throw errK;
-
-      const { error: errS } = await supabase
-        .from("skm_responses")
-        .upsert(getInitialSkmSeed());
-      if (errS) throw errS;
+      await supabase
+        .from("sekolah")
+        .upsert(INITIAL_SEKOLAH_SEED, { onConflict: "npsn" });
 
       await refreshData();
       return {
         ok: true,
         message:
-          "Berhasil mengunggah data awal Bidang, Kunjungan, dan SKM Dikbud Kendari ke Supabase!",
+          "Berhasil mengunggah data master Bidang & Sekolah Dikbud Kendari ke Supabase!",
       };
     } catch (err: unknown) {
       const msg =
@@ -844,6 +1326,8 @@ export function ButadiProvider({ children }: { children: React.ReactNode }) {
         bidangList,
         kunjunganList,
         skmList,
+        sekolahList,
+        kunjunganSekolahList,
         isLoading,
         isSupabaseConnected,
         supabaseSource,
@@ -861,6 +1345,12 @@ export function ButadiProvider({ children }: { children: React.ReactNode }) {
         saveBidang,
         deleteBidang,
         submitSkm,
+        createKunjunganSekolah,
+        updateStatusKunjunganSekolah,
+        deleteKunjunganSekolah,
+        findVisitorSekolahByNikNip,
+        saveSekolah,
+        deleteSekolah,
         configureSupabase,
         seedInitialDataToSupabase,
       }}
