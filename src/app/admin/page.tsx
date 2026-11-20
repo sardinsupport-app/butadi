@@ -36,6 +36,7 @@ import {
   Bidang,
   JenjangSekolah,
   Kunjungan,
+  KunjunganSekolah,
   Sekolah,
   StatusKunjungan,
   StatusPejabat,
@@ -69,6 +70,9 @@ function PortalAdminDashboard({ onLock }: { onLock: () => void }) {
     kunjunganSekolahList,
     updateStatusKunjungan,
     deleteKunjungan,
+    deleteMultipleKunjungan,
+    deleteKunjunganSekolah,
+    deleteMultipleKunjunganSekolah,
     updateStatusPejabat,
     saveBidang,
     deleteBidang,
@@ -104,6 +108,11 @@ function PortalAdminDashboard({ onLock }: { onLock: () => void }) {
 
   // Delete Visitor Modal state
   const [deletingVisitor, setDeletingVisitor] = useState<Kunjungan | null>(null);
+  const [deletingSchoolVisitor, setDeletingSchoolVisitor] =
+    useState<KunjunganSekolah | null>(null);
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState<
+    "dinas" | "sekolah" | null
+  >(null);
   const [isDeletingVisitor, setIsDeletingVisitor] = useState<boolean>(false);
 
   // Disposisi Modal state
@@ -197,6 +206,48 @@ function PortalAdminDashboard({ onLock }: { onLock: () => void }) {
     await deleteKunjungan(deletingVisitor.id);
     setIsDeletingVisitor(false);
     setDeletingVisitor(null);
+  };
+
+  const handleConfirmDeleteSchoolVisitor = async () => {
+    if (!deletingSchoolVisitor) return;
+    setIsDeletingVisitor(true);
+    await deleteKunjunganSekolah(deletingSchoolVisitor.id);
+    setIsDeletingVisitor(false);
+    setDeletingSchoolVisitor(null);
+  };
+
+  const handleBulkDeleteDinas = async (mode: "completed" | "filtered" | "all") => {
+    const targets =
+      mode === "completed"
+        ? kunjunganList.filter(
+            (k) => k.status === "Selesai" || k.status === "Batal"
+          )
+        : mode === "filtered"
+        ? filteredKunjungan
+        : kunjunganList;
+    if (targets.length === 0) return;
+    setIsDeletingVisitor(true);
+    await deleteMultipleKunjungan(targets.map((k) => k.id));
+    setIsDeletingVisitor(false);
+    setShowBulkDeleteModal(null);
+  };
+
+  const handleBulkDeleteSekolah = async (
+    mode: "completed" | "filtered" | "all"
+  ) => {
+    const targets =
+      mode === "completed"
+        ? filteredKunjunganSekolah.filter(
+            (k) => k.status === "Selesai" || k.status === "Batal"
+          )
+        : mode === "filtered"
+        ? filteredKunjunganSekolah
+        : kunjunganSekolahList;
+    if (targets.length === 0) return;
+    setIsDeletingVisitor(true);
+    await deleteMultipleKunjunganSekolah(targets.map((k) => k.id));
+    setIsDeletingVisitor(false);
+    setShowBulkDeleteModal(null);
   };
 
   const handleSelesaiKunjungan = async (k: Kunjungan) => {
@@ -557,8 +608,8 @@ function PortalAdminDashboard({ onLock }: { onLock: () => void }) {
               />
             </div>
 
-            {/* Export Buttons */}
-            <div className="flex items-center gap-2 shrink-0">
+            {/* Export & Bulk Delete Buttons */}
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
               <button
                 type="button"
                 onClick={() =>
@@ -584,6 +635,16 @@ function PortalAdminDashboard({ onLock }: { onLock: () => void }) {
               >
                 <FileSpreadsheet className="w-4 h-4" />
                 <span>Ekspor Excel</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowBulkDeleteModal("dinas")}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 text-xs font-extrabold shadow-sm transition"
+                title="Hapus atau Bersihkan Data Kunjungan Tamu"
+              >
+                <Trash2 className="w-4 h-4 text-rose-600" />
+                <span>Hapus Data</span>
               </button>
             </div>
           </div>
@@ -813,7 +874,7 @@ function PortalAdminDashboard({ onLock }: { onLock: () => void }) {
                                 title="Hapus Data Tamu"
                               >
                                 <Trash2 className="w-3.5 h-3.5 text-rose-600" />
-                                <span className="hidden xl:inline">Hapus</span>
+                                <span>Hapus</span>
                               </button>
                             </div>
                           </td>
@@ -1288,10 +1349,20 @@ function PortalAdminDashboard({ onLock }: { onLock: () => void }) {
                 <FileSpreadsheet className="w-4 h-4" />
                 <span>Ekspor Excel</span>
               </button>
+
+              <button
+                type="button"
+                onClick={() => setShowBulkDeleteModal("sekolah")}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 text-xs font-extrabold shadow-sm transition"
+                title="Hapus Data Kunjungan Sekolah"
+              >
+                <Trash2 className="w-4 h-4 text-rose-600" />
+                <span>Hapus Data</span>
+              </button>
             </div>
           </div>
 
-          {/* Tabel History Kunjungan Sekolah (Read-Only) */}
+          {/* Tabel History Kunjungan Sekolah */}
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left border-collapse">
@@ -1303,13 +1374,14 @@ function PortalAdminDashboard({ onLock }: { onLock: () => void }) {
                     <th className="py-3.5 px-4">Tujuan di Sekolah</th>
                     <th className="py-3.5 px-4">Keperluan &amp; Catatan</th>
                     <th className="py-3.5 px-4">Status &amp; Rating</th>
+                    <th className="py-3.5 px-4 text-right">Aksi</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-xs">
                   {filteredKunjunganSekolah.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={6}
+                        colSpan={7}
                         className="py-12 text-center text-slate-400"
                       >
                         Belum ada riwayat kunjungan pada sekolah yang dipilih.
@@ -1414,6 +1486,18 @@ function PortalAdminDashboard({ onLock }: { onLock: () => void }) {
                               </div>
                             )}
                           </td>
+
+                          <td className="py-4 px-4 text-right whitespace-nowrap">
+                            <button
+                              type="button"
+                              onClick={() => setDeletingSchoolVisitor(k)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs transition"
+                              title="Hapus Data Kunjungan Sekolah"
+                            >
+                              <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                              <span>Hapus</span>
+                            </button>
+                          </td>
                         </tr>
                       );
                     })
@@ -1437,9 +1521,19 @@ function PortalAdminDashboard({ onLock }: { onLock: () => void }) {
                         <span className="font-extrabold text-xs text-[#0F2C59]">
                           {sek?.nama_sekolah} ({sek?.npsn})
                         </span>
-                        <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px] font-bold">
-                          {k.status}
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px] font-bold">
+                            {k.status}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setDeletingSchoolVisitor(k)}
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 font-bold text-[10px]"
+                          >
+                            <Trash2 className="w-3 h-3 text-rose-600" />
+                            <span>Hapus</span>
+                          </button>
+                        </div>
                       </div>
                       <div className="text-xs">
                         <p className="font-bold text-slate-900">
@@ -2158,6 +2252,238 @@ function PortalAdminDashboard({ onLock }: { onLock: () => void }) {
               >
                 <Trash2 className="w-4 h-4" />
                 <span>{isDeletingVisitor ? "Menghapus..." : "Ya, Hapus Data"}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Konfirmasi Hapus Data Tamu Sekolah (Per Baris) */}
+      {deletingSchoolVisitor && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border-2 border-rose-200 animate-in fade-in zoom-in-95 space-y-4">
+            <div className="flex items-start gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+                <Trash2 className="w-6 h-6" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-base font-extrabold text-slate-900">
+                  Hapus Data Kunjungan Sekolah?
+                </h3>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Tindakan ini akan menghapus data kunjungan tamu sekolah secara
+                  permanen dari database sistem.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 text-xs space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500 font-medium">Nomor Tiket:</span>
+                <span className="font-mono font-extrabold text-[#0F2C59]">
+                  {deletingSchoolVisitor.kode_tiket}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500 font-medium">Nama Tamu:</span>
+                <span className="font-bold text-slate-900">
+                  {deletingSchoolVisitor.nama_tamu}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500 font-medium">Unit Tujuan:</span>
+                <span className="text-slate-700">
+                  {deletingSchoolVisitor.tujuan_unit}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                disabled={isDeletingVisitor}
+                onClick={() => setDeletingSchoolVisitor(null)}
+                className="px-4 py-2.5 rounded-xl border border-slate-300 hover:bg-slate-100 text-xs font-bold text-slate-700 transition"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                disabled={isDeletingVisitor}
+                onClick={handleConfirmDeleteSchoolVisitor}
+                className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-extrabold shadow-sm transition disabled:opacity-50"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>
+                  {isDeletingVisitor ? "Menghapus..." : "Ya, Hapus Data"}
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Hapus & Bersihkan Data Massal (Dinas / Sekolah) */}
+      {showBulkDeleteModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border-2 border-rose-200 animate-in fade-in zoom-in-95 space-y-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <div className="w-11 h-11 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+                  <Trash2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-900">
+                    Hapus &amp; Bersihkan Data Kunjungan
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    {showBulkDeleteModal === "dinas"
+                      ? "Pilih kategori data buku tamu Kantor Dinas yang ingin dihapus:"
+                      : "Pilih kategori data buku tamu Sekolah yang ingin dihapus:"}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowBulkDeleteModal(null)}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {showBulkDeleteModal === "dinas" ? (
+              <div className="space-y-2.5">
+                <button
+                  type="button"
+                  disabled={
+                    isDeletingVisitor ||
+                    kunjunganList.filter(
+                      (k) => k.status === "Selesai" || k.status === "Batal"
+                    ).length === 0
+                  }
+                  onClick={() => handleBulkDeleteDinas("completed")}
+                  className="w-full p-3.5 rounded-2xl border border-slate-200 hover:border-rose-300 hover:bg-rose-50/60 text-left transition flex items-center justify-between disabled:opacity-40"
+                >
+                  <div>
+                    <p className="text-xs font-extrabold text-slate-900">
+                      Hapus Tamu yang Sudah Selesai / Batal
+                    </p>
+                    <p className="text-[11px] text-slate-500">
+                      Membersihkan riwayat tamu yang sudah selesai berkunjung
+                    </p>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-lg bg-rose-100 text-rose-800 font-extrabold text-xs">
+                    {
+                      kunjunganList.filter(
+                        (k) => k.status === "Selesai" || k.status === "Batal"
+                      ).length
+                    }{" "}
+                    Data
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={
+                    isDeletingVisitor || filteredKunjungan.length === 0
+                  }
+                  onClick={() => handleBulkDeleteDinas("filtered")}
+                  className="w-full p-3.5 rounded-2xl border border-slate-200 hover:border-rose-300 hover:bg-rose-50/60 text-left transition flex items-center justify-between disabled:opacity-40"
+                >
+                  <div>
+                    <p className="text-xs font-extrabold text-slate-900">
+                      Hapus Semua Data Sesuai Filter Saat Ini
+                    </p>
+                    <p className="text-[11px] text-slate-500">
+                      Menghapus data yang sedang tampil di tabel saat ini
+                    </p>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-lg bg-rose-100 text-rose-800 font-extrabold text-xs">
+                    {filteredKunjungan.length} Data
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={isDeletingVisitor || kunjunganList.length === 0}
+                  onClick={() => handleBulkDeleteDinas("all")}
+                  className="w-full p-3.5 rounded-2xl border border-rose-200 bg-rose-50/50 hover:bg-rose-100/80 text-left transition flex items-center justify-between disabled:opacity-40"
+                >
+                  <div>
+                    <p className="text-xs font-extrabold text-rose-800">
+                      Hapus Seluruh Data Kunjungan Dinas (Reset)
+                    </p>
+                    <p className="text-[11px] text-rose-600">
+                      Mengosongkan seluruh daftar kunjungan Kantor Dinas
+                    </p>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-lg bg-rose-600 text-white font-extrabold text-xs">
+                    {kunjunganList.length} Data
+                  </span>
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-2.5">
+                <button
+                  type="button"
+                  disabled={
+                    isDeletingVisitor ||
+                    filteredKunjunganSekolah.filter(
+                      (k) => k.status === "Selesai" || k.status === "Batal"
+                    ).length === 0
+                  }
+                  onClick={() => handleBulkDeleteSekolah("completed")}
+                  className="w-full p-3.5 rounded-2xl border border-slate-200 hover:border-rose-300 hover:bg-rose-50/60 text-left transition flex items-center justify-between disabled:opacity-40"
+                >
+                  <div>
+                    <p className="text-xs font-extrabold text-slate-900">
+                      Hapus Tamu Sekolah yang Sudah Selesai / Batal
+                    </p>
+                    <p className="text-[11px] text-slate-500">
+                      Membersihkan riwayat tamu sekolah yang sudah selesai
+                    </p>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-lg bg-rose-100 text-rose-800 font-extrabold text-xs">
+                    {
+                      filteredKunjunganSekolah.filter(
+                        (k) => k.status === "Selesai" || k.status === "Batal"
+                      ).length
+                    }{" "}
+                    Data
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={
+                    isDeletingVisitor || filteredKunjunganSekolah.length === 0
+                  }
+                  onClick={() => handleBulkDeleteSekolah("filtered")}
+                  className="w-full p-3.5 rounded-2xl border border-rose-200 bg-rose-50/50 hover:bg-rose-100/80 text-left transition flex items-center justify-between disabled:opacity-40"
+                >
+                  <div>
+                    <p className="text-xs font-extrabold text-rose-800">
+                      Hapus Semua Data Kunjungan Sekolah Sesuai Filter
+                    </p>
+                    <p className="text-[11px] text-rose-600">
+                      Menghapus data kunjungan sekolah yang tampil saat ini
+                    </p>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-lg bg-rose-600 text-white font-extrabold text-xs">
+                    {filteredKunjunganSekolah.length} Data
+                  </span>
+                </button>
+              </div>
+            )}
+
+            <div className="flex justify-end pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setShowBulkDeleteModal(null)}
+                className="px-4 py-2 rounded-xl border border-slate-300 text-xs font-bold text-slate-600"
+              >
+                Tutup
               </button>
             </div>
           </div>

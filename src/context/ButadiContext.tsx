@@ -102,6 +102,7 @@ interface ButadiContextValue {
     extra?: { bidang_id?: string; catatan_disposisi_kadis?: string | null }
   ) => Promise<Kunjungan | null>;
   deleteKunjungan: (id: string) => Promise<boolean>;
+  deleteMultipleKunjungan: (ids: string[]) => Promise<boolean>;
   findVisitorByNikNip: (
     nikNip: string
   ) => Promise<Pick<
@@ -131,6 +132,7 @@ interface ButadiContextValue {
     }
   ) => Promise<KunjunganSekolah | null>;
   deleteKunjunganSekolah: (id: string) => Promise<boolean>;
+  deleteMultipleKunjunganSekolah: (ids: string[]) => Promise<boolean>;
   findVisitorSekolahByNikNip: (
     nikNip: string
   ) => Promise<Pick<
@@ -697,6 +699,61 @@ export function ButadiProvider({ children }: { children: React.ReactNode }) {
     [kunjunganList, isSupabaseConnected, persistLocal, broadcastSync, pushToast]
   );
 
+  const deleteMultipleKunjungan = useCallback(
+    async (ids: string[]): Promise<boolean> => {
+      if (!ids || ids.length === 0) return false;
+      const idSet = new Set(ids);
+      const supabase = getSupabaseClient();
+      if (supabase && isSupabaseConnected) {
+        try {
+          await supabase
+            .from("skm_responses")
+            .delete()
+            .in("kunjungan_id", ids);
+          const { error } = await supabase
+            .from("kunjungan")
+            .delete()
+            .in("id", ids);
+          if (error) {
+            pushToast("Gagal Menghapus Data", error.message, "warning");
+            return false;
+          }
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : "Terjadi kesalahan";
+          pushToast("Gagal Menghapus Data", msg, "warning");
+          return false;
+        }
+      }
+
+      setKunjunganList((prev) => {
+        const next = prev.filter((k) => !idSet.has(k.id));
+        persistLocal(undefined, next, undefined);
+        return next;
+      });
+
+      setSkmList((prev) => {
+        const next = prev.filter(
+          (s) => !s.kunjungan_id || !idSet.has(s.kunjungan_id)
+        );
+        persistLocal(undefined, undefined, next);
+        return next;
+      });
+
+      pushToast(
+        "Data Kunjungan Berhasil Dihapus",
+        `${ids.length} data kunjungan tamu telah dihapus dari sistem.`,
+        "info"
+      );
+      broadcastSync(
+        "Data Kunjungan Dihapus",
+        `${ids.length} data kunjungan dihapus`,
+        false
+      );
+      return true;
+    },
+    [isSupabaseConnected, persistLocal, broadcastSync, pushToast]
+  );
+
   const findVisitorByNikNip = useCallback(
     async (
       nikNip: string
@@ -1128,6 +1185,49 @@ export function ButadiProvider({ children }: { children: React.ReactNode }) {
     ]
   );
 
+  const deleteMultipleKunjunganSekolah = useCallback(
+    async (ids: string[]): Promise<boolean> => {
+      if (!ids || ids.length === 0) return false;
+      const idSet = new Set(ids);
+      const supabase = getSupabaseClient();
+      if (supabase && isSupabaseConnected) {
+        try {
+          const { error } = await supabase
+            .from("kunjungan_sekolah")
+            .delete()
+            .in("id", ids);
+          if (error) {
+            pushToast("Gagal Menghapus Data", error.message, "warning");
+            return false;
+          }
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : "Terjadi kesalahan";
+          pushToast("Gagal Menghapus Data", msg, "warning");
+          return false;
+        }
+      }
+
+      setKunjunganSekolahList((prev) => {
+        const next = prev.filter((k) => !idSet.has(k.id));
+        persistLocal(undefined, undefined, undefined, undefined, next);
+        return next;
+      });
+
+      pushToast(
+        "Data Tamu Sekolah Dihapus",
+        `${ids.length} data kunjungan sekolah berhasil dihapus.`,
+        "info"
+      );
+      broadcastSync(
+        "Data Tamu Sekolah Dihapus",
+        `${ids.length} data kunjungan sekolah dihapus`,
+        false
+      );
+      return true;
+    },
+    [isSupabaseConnected, persistLocal, broadcastSync, pushToast]
+  );
+
   const findVisitorSekolahByNikNip = useCallback(
     async (
       nikNip: string
@@ -1340,6 +1440,7 @@ export function ButadiProvider({ children }: { children: React.ReactNode }) {
         createKunjungan,
         updateStatusKunjungan,
         deleteKunjungan,
+        deleteMultipleKunjungan,
         findVisitorByNikNip,
         updateStatusPejabat,
         saveBidang,
@@ -1348,6 +1449,7 @@ export function ButadiProvider({ children }: { children: React.ReactNode }) {
         createKunjunganSekolah,
         updateStatusKunjunganSekolah,
         deleteKunjunganSekolah,
+        deleteMultipleKunjunganSekolah,
         findVisitorSekolahByNikNip,
         saveSekolah,
         deleteSekolah,
