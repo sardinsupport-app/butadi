@@ -62,9 +62,7 @@ export default function PortalKioskPage() {
       {/* Top Bar Kiosk */}
       <div className="bg-gradient-to-r from-[#0F2C59] via-[#1E40AF] to-[#0F2C59] text-white rounded-3xl p-5 sm:p-6 shadow-xl border-b-4 border-[#F59E0B] flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center shrink-0">
-            <Monitor className="w-6 h-6 text-[#F59E0B]" />
-          </div>
+          <KendariLogo className="w-12 h-12 sm:w-14 sm:h-14 shrink-0" />
           <div>
             <div className="flex items-center gap-2">
               <span className="px-2.5 py-0.5 rounded-full bg-[#F59E0B] text-[#0F2C59] text-[10px] font-extrabold uppercase tracking-wider">
@@ -112,8 +110,8 @@ export default function PortalKioskPage() {
         {/* Left: Standee QR Code & Skor IKM */}
         <div className="lg:col-span-4 space-y-5">
           <div className="bg-white text-slate-900 rounded-3xl p-6 shadow-xl border-4 border-[#F59E0B] text-center space-y-4 tenun-card-watermark">
-            <div className="flex items-center justify-center gap-2.5 border-b border-slate-200 pb-3">
-              <KendariLogo className="w-9 h-9" />
+            <div className="flex items-center justify-center gap-3 border-b border-slate-200 pb-3">
+              <KendariLogo className="w-11 h-11 shrink-0" />
               <div className="text-left">
                 <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
                   Pemerintah Kota Kendari

@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useButadi } from "@/context/ButadiContext";
 import { calculateIKM, UNSUR_SKM_LIST } from "@/lib/ikm";
+import { KendariLogo } from "@/components/Navbar";
 
 function PortalSkmContent() {
   const searchParams = useSearchParams();
@@ -101,19 +102,22 @@ function PortalSkmContent() {
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-8">
       {/* Header Portal SKM + Live IKM Scoreboard */}
       <div className="bg-gradient-to-r from-[#0F2C59] via-teal-900 to-[#0F2C59] text-white rounded-3xl p-6 sm:p-8 shadow-xl border-b-4 border-[#F59E0B] grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-        <div className="lg:col-span-8 space-y-2">
-          <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#F59E0B] text-[#0F2C59] text-[11px] font-extrabold uppercase">
-            Portal 4 &bull; Standar PermenPAN-RB No. 14 Tahun 2017
+        <div className="lg:col-span-8 flex items-start sm:items-center gap-4">
+          <KendariLogo className="w-12 h-12 sm:w-14 sm:h-14 shrink-0" />
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#F59E0B] text-[#0F2C59] text-[11px] font-extrabold uppercase">
+              Portal 4 &bull; Standar PermenPAN-RB No. 14 Tahun 2017
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold">
+              Survei Kepuasan Masyarakat (SKM) Digital
+            </h1>
+            <p className="text-xs sm:text-sm text-teal-100 leading-relaxed">
+              Penilaian Bapak/Ibu terhadap <strong>9 Unsur Pelayanan</strong>{" "}
+              secara otomatis menghitung Nilai Indeks Kepuasan Masyarakat (IKM)
+              Dinas Pendidikan dan Kebudayaan Kota Kendari secara{" "}
+              <em>real-time</em>.
+            </p>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold">
-            Survei Kepuasan Masyarakat (SKM) Digital
-          </h1>
-          <p className="text-xs sm:text-sm text-teal-100 leading-relaxed">
-            Penilaian Bapak/Ibu terhadap <strong>9 Unsur Pelayanan</strong>{" "}
-            secara otomatis menghitung Nilai Indeks Kepuasan Masyarakat (IKM)
-            Dinas Pendidikan dan Kebudayaan Kota Kendari secara{" "}
-            <em>real-time</em>.
-          </p>
         </div>
 
         <div className="lg:col-span-4 bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/20 text-center">

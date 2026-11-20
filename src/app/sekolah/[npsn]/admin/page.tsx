@@ -46,6 +46,7 @@ import {
 } from "@/lib/whatsapp";
 import { playNotificationBell } from "@/lib/sound";
 import { PasscodeGate } from "@/components/PasscodeGate";
+import { KendariLogo } from "@/components/Navbar";
 
 function AdminSekolahDashboard({
   sekolah,
@@ -194,23 +195,26 @@ function AdminSekolahDashboard({
       {/* Header Admin Mandiri Sekolah */}
       <div className="bg-gradient-to-r from-[#0F2C59] via-[#1E40AF] to-[#0F2C59] text-white rounded-3xl p-6 shadow-xl border-b-4 border-[#F59E0B] space-y-4">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="px-3 py-0.5 rounded-full bg-[#F59E0B] text-[#0F2C59] text-[11px] font-extrabold uppercase">
-                PORTAL ADMIN MANDIRI SEKOLAH &bull; NPSN {sekolah.npsn}
-              </span>
-              <span className="px-2.5 py-0.5 rounded-full bg-white/15 text-blue-100 text-[11px] font-bold">
-                Jenjang {sekolah.jenjang} &bull; Kec. {sekolah.kecamatan}
-              </span>
+          <div className="flex items-start sm:items-center gap-3.5">
+            <KendariLogo className="w-12 h-12 sm:w-14 sm:h-14 shrink-0" />
+            <div className="space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="px-3 py-0.5 rounded-full bg-[#F59E0B] text-[#0F2C59] text-[11px] font-extrabold uppercase">
+                  PORTAL ADMIN MANDIRI SEKOLAH &bull; NPSN {sekolah.npsn}
+                </span>
+                <span className="px-2.5 py-0.5 rounded-full bg-white/15 text-blue-100 text-[11px] font-bold">
+                  Jenjang {sekolah.jenjang} &bull; Kec. {sekolah.kecamatan}
+                </span>
+              </div>
+              <h1 className="text-xl sm:text-2xl font-extrabold">
+                Manajemen Buku Tamu &mdash; {sekolah.nama_sekolah}
+              </h1>
+              <p className="text-xs text-blue-200">
+                Otonomi Pengelolaan Sekolah: Hanya Anda (Admin{" "}
+                {sekolah.nama_sekolah}) yang dapat mengubah atau menghapus data
+                buku tamu di sekolah ini.
+              </p>
             </div>
-            <h1 className="text-xl sm:text-2xl font-extrabold">
-              Manajemen Buku Tamu &mdash; {sekolah.nama_sekolah}
-            </h1>
-            <p className="text-xs text-blue-200">
-              Otonomi Pengelolaan Sekolah: Hanya Anda (Admin{" "}
-              {sekolah.nama_sekolah}) yang dapat mengubah atau menghapus data
-              buku tamu di sekolah ini.
-            </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">

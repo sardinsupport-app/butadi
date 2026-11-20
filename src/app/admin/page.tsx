@@ -58,6 +58,7 @@ import {
 } from "@/lib/supabase";
 import { playNotificationBell } from "@/lib/sound";
 import { PasscodeGate } from "@/components/PasscodeGate";
+import { KendariLogo } from "@/components/Navbar";
 
 function PortalAdminDashboard({ onLock }: { onLock: () => void }) {
   const {
@@ -354,17 +355,20 @@ function PortalAdminDashboard({ onLock }: { onLock: () => void }) {
       {/* Header Portal Admin */}
       <div className="bg-gradient-to-r from-[#0F2C59] via-[#1E40AF] to-[#0F2C59] text-white rounded-3xl p-6 shadow-xl border-b-4 border-[#F59E0B] space-y-4">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#F59E0B] text-[#0F2C59] text-[11px] font-extrabold uppercase">
-              Portal 2 &bull; Pusat Kendali Admin Dinas Pendidikan Kota Kendari
+          <div className="flex items-start sm:items-center gap-3.5">
+            <KendariLogo className="w-12 h-12 sm:w-14 sm:h-14 shrink-0" />
+            <div>
+              <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#F59E0B] text-[#0F2C59] text-[11px] font-extrabold uppercase">
+                Portal 2 &bull; Pusat Kendali Admin Dinas Pendidikan Kota Kendari
+              </div>
+              <h1 className="text-xl sm:text-2xl font-extrabold mt-1">
+                Manajemen Antrean Dinas &amp; Monitoring Kunjungan Sekolah
+              </h1>
+              <p className="text-xs sm:text-sm text-blue-100">
+                Kelola pelayanan tamu Kantor Dinas Pendidikan, serta pantau
+                riwayat buku tamu seluruh sekolah se-Kota Kendari secara terpusat.
+              </p>
             </div>
-            <h1 className="text-xl sm:text-2xl font-extrabold mt-1">
-              Manajemen Antrean Dinas &amp; Monitoring Kunjungan Sekolah
-            </h1>
-            <p className="text-xs sm:text-sm text-blue-100">
-              Kelola pelayanan tamu Kantor Dinas Pendidikan, serta pantau
-              riwayat buku tamu seluruh sekolah se-Kota Kendari secara terpusat.
-            </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">

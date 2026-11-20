@@ -218,17 +218,20 @@ function PortalTamuContent() {
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-6">
       {/* Header Portal Tamu */}
       <div className="bg-gradient-to-r from-[#0F2C59] to-[#1E40AF] text-white rounded-3xl p-6 shadow-xl border-b-4 border-[#F59E0B] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="space-y-1">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#F59E0B] text-[#0F2C59] text-[11px] font-extrabold uppercase">
-            Portal 1 &bull; Mobile-First Check-In
+        <div className="flex items-center gap-3.5">
+          <KendariLogo className="w-12 h-12 sm:w-14 sm:h-14 shrink-0" />
+          <div className="space-y-1">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#F59E0B] text-[#0F2C59] text-[11px] font-extrabold uppercase">
+              Portal 1 &bull; Mobile-First Check-In
+            </div>
+            <h1 className="text-xl sm:text-2xl font-extrabold">
+              Portal Tamu Digital Dikbud Kendari
+            </h1>
+            <p className="text-xs sm:text-sm text-blue-100">
+              Isi buku tamu dalam 30 detik &amp; pantau panggilan ruangan secara{" "}
+              <em>real-time</em> dari HP Anda.
+            </p>
           </div>
-          <h1 className="text-xl sm:text-2xl font-extrabold">
-            Portal Tamu Digital Dikbud Kendari
-          </h1>
-          <p className="text-xs sm:text-sm text-blue-100">
-            Isi buku tamu dalam 30 detik &amp; pantau panggilan ruangan secara{" "}
-            <em>real-time</em> dari HP Anda.
-          </p>
         </div>
 
         {/* Switcher Tab */}

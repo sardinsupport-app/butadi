@@ -45,6 +45,7 @@ import {
 import { KECAMATAN_KENDARI_LIST } from "@/lib/supabase";
 import { Kunjungan, StatusPejabat } from "@/types/butadi";
 import { PasscodeGate } from "@/components/PasscodeGate";
+import { KendariLogo } from "@/components/Navbar";
 
 const KADIS_BIDANG_ID = "11111111-1111-4111-8111-111111111101";
 const CHART_COLORS = [
@@ -302,18 +303,21 @@ function PortalKadisDashboard({ onLock }: { onLock: () => void }) {
       {/* Executive Header */}
       <div className="bg-gradient-to-r from-[#0F2C59] via-[#1E40AF] to-[#0F2C59] text-white rounded-3xl p-6 sm:p-8 shadow-xl border-b-4 border-[#F59E0B] space-y-5">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-          <div className="space-y-1.5">
-            <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#F59E0B] text-[#0F2C59] text-[11px] font-extrabold uppercase">
-              <Crown className="w-3.5 h-3.5" />
-              <span>Portal 3 &bull; Executive Dashboard Kepala Dinas</span>
+          <div className="flex items-start sm:items-center gap-4">
+            <KendariLogo className="w-13 h-13 sm:w-16 sm:h-16 shrink-0" />
+            <div className="space-y-1.5">
+              <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#F59E0B] text-[#0F2C59] text-[11px] font-extrabold uppercase">
+                <Crown className="w-3.5 h-3.5" />
+                <span>Portal 3 &bull; Executive Dashboard Kepala Dinas</span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold">
+                Dashboard Eksekutif &amp; Monitoring Sekolah se-Kota Kendari
+              </h1>
+              <p className="text-xs sm:text-sm text-blue-100">
+                Hj. Saemina, S.Pd., M.Pd. &mdash; Kepala Dinas Pendidikan dan
+                Kebudayaan Kota Kendari
+              </p>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold">
-              Dashboard Eksekutif &amp; Monitoring Sekolah se-Kota Kendari
-            </h1>
-            <p className="text-xs sm:text-sm text-blue-100">
-              Hj. Saemina, S.Pd., M.Pd. &mdash; Kepala Dinas Pendidikan dan
-              Kebudayaan Kota Kendari
-            </p>
           </div>
 
           {/* Status Kehadiran Kepala Dinas Quick Switch */}

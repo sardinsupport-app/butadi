@@ -10,6 +10,11 @@ export const metadata: Metadata = {
   title: "BUTADI - Buku Tamu Digital Dinas Pendidikan & Kebudayaan Kota Kendari",
   description:
     "Sistem E-Receptionist, Buku Tamu Digital QR Code, Dashboard Eksekutif Kepala Dinas, dan Survei Kepuasan Masyarakat (SKM) Real-Time Dinas Pendidikan dan Kebudayaan Kota Kendari.",
+  icons: {
+    icon: "/logo-kendari.png",
+    shortcut: "/logo-kendari.png",
+    apple: "/logo-kendari.png",
+  },
 };
 
 export default function RootLayout({

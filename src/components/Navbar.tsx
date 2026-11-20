@@ -17,48 +17,17 @@ import { useButadi } from "@/context/ButadiContext";
 
 export const ISOLATED_SCHOOL_SESSION_KEY = "butadi_isolated_school_npsn";
 
-export function KendariLogo({ className = "w-10 h-10" }: { className?: string }) {
+export function KendariLogo({
+  className = "w-10 h-10",
+}: {
+  className?: string;
+}) {
   return (
-    <svg
-      viewBox="0 0 64 64"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className={className}
-      aria-label="Logo Dikbud Kota Kendari"
-    >
-      <path
-        d="M32 4L56 14V32C56 46.5 45.5 56.5 32 60C18.5 56.5 8 46.5 8 32V14L32 4Z"
-        fill="#0F2C59"
-        stroke="#F59E0B"
-        strokeWidth="3"
-      />
-      <path
-        d="M32 8L52 16.5V31.5C52 43.8 43.2 52.4 32 55.5C20.8 52.4 12 43.8 12 31.5V16.5L32 8Z"
-        fill="#1E40AF"
-      />
-      <circle
-        cx="32"
-        cy="28"
-        r="11"
-        stroke="#F59E0B"
-        strokeWidth="2.2"
-        strokeDasharray="4 2"
-      />
-      <path
-        d="M21 34C24.5 32.5 28.5 32.5 32 34.5C35.5 32.5 39.5 32.5 43 34V25C39.5 23.5 35.5 23.5 32 25.5C28.5 23.5 24.5 23.5 21 25V34Z"
-        fill="#FFFFFF"
-      />
-      <path
-        d="M32 14C34 17 35 19 32 22C29 19 30 17 32 14Z"
-        fill="#F59E0B"
-      />
-      <path
-        d="M18 44H46L43 49H21L18 44Z"
-        fill="#0D9488"
-        stroke="#F59E0B"
-        strokeWidth="1.2"
-      />
-    </svg>
+    <img
+      src="/logo-kendari.png"
+      alt="Logo Pemerintah Kota Kendari"
+      className={`object-contain select-none drop-shadow-md ${className}`}
+    />
   );
 }
 
