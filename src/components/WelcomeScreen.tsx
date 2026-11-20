@@ -1,29 +1,31 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Sparkles, Volume2 } from "lucide-react";
 import { KendariLogo } from "@/components/Navbar";
 import { playWelcomeSound } from "@/lib/sound";
 import { useButadi } from "@/context/ButadiContext";
 
-const WELCOME_SHOWN_KEY = "butadi_welcome_shown_session_v1";
-
 export function WelcomeScreen() {
   const pathname = usePathname();
   const { sekolahList, soundEnabled } = useButadi();
 
-  const [visible, setVisible] = useState<boolean>(false);
+  // Default langsung true agar tampil seketika setiap kali aplikasi di-refresh / dimuat
+  const [visible, setVisible] = useState<boolean>(true);
   const [exiting, setExiting] = useState<boolean>(false);
   const [progress, setProgress] = useState<number>(0);
   const [soundPlayed, setSoundPlayed] = useState<boolean>(false);
 
-  // Deteksi apakah sedang berada di portal sekolah tertentu
+  // Deteksi apakah sedang berada di portal sekolah tertentu (/sekolah/[npsn], /sekolah/[npsn]/kiosk, /sekolah/[npsn]/admin)
   const schoolMatch = pathname?.match(/^\/sekolah\/([^/]+)/);
   const activeNpsn = schoolMatch ? schoolMatch[1] : null;
   const activeSchool = activeNpsn
     ? sekolahList.find((s) => s.npsn === activeNpsn)
     : null;
+
+  // Catat konteks portal terakhir agar saat berpindah ke portal sekolah juga otomatis memutar Welcome Screen sekolah tersebut
+  const lastPortalKeyRef = useRef<string | null>(null);
 
   const triggerWelcome = useCallback(async () => {
     setExiting(false);
@@ -45,9 +47,6 @@ export function WelcomeScreen() {
         await playWelcomeSound();
         setSoundPlayed(true);
       }
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem(WELCOME_SHOWN_KEY, "1");
-      }
       setExiting(true);
       setTimeout(() => {
         setVisible(false);
@@ -57,14 +56,19 @@ export function WelcomeScreen() {
     [soundEnabled, soundPlayed]
   );
 
-  // Tampilkan otomatis saat sesi baru dibuka, serta dengarkan event replay dari Navbar
+  // Tampilkan otomatis setiap kali halaman di-refresh / dimuat pertama kali,
+  // serta saat berpindah masuk ke portal sekolah (/sekolah/[npsn])
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const alreadyShown = sessionStorage.getItem(WELCOME_SHOWN_KEY);
-    if (!alreadyShown) {
+    const currentPortalKey = activeNpsn ? `school:${activeNpsn}` : "main";
+    if (lastPortalKeyRef.current !== currentPortalKey) {
+      lastPortalKeyRef.current = currentPortalKey;
       triggerWelcome();
     }
+  }, [activeNpsn, triggerWelcome]);
 
+  // Dengarkan event replay manual dari tombol "Welcome Intro" di Navbar
+  useEffect(() => {
+    if (typeof window === "undefined") return;
     const handleReplay = () => {
       triggerWelcome();
     };
@@ -90,15 +94,15 @@ export function WelcomeScreen() {
     return () => clearInterval(interval);
   }, [visible, exiting]);
 
-  // Jika suara sudah otomatis berbunyi dan progress mencapai 100%, otomatis masuk dengan mulus
+  // Ketika progress mencapai 100%, otomatis masuk dengan mulus (atau pengguna bisa klik kapan saja untuk langsung masuk + membunyikan chime)
   useEffect(() => {
-    if (visible && !exiting && progress >= 100 && soundPlayed) {
+    if (visible && !exiting && progress >= 100) {
       const timer = setTimeout(() => {
-        handleEnterApp(false);
-      }, 450);
+        handleEnterApp(true);
+      }, 550);
       return () => clearTimeout(timer);
     }
-  }, [visible, exiting, progress, soundPlayed, handleEnterApp]);
+  }, [visible, exiting, progress, handleEnterApp]);
 
   if (!visible) return null;
 
