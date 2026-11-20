@@ -47,6 +47,94 @@ body {
   scrollbar-width: none;
 }
 
+/* Animasi Khusus Welcome Screen BUTADI */
+@keyframes floatLogo {
+  0%,
+  100% {
+    transform: translateY(0px) scale(1);
+  }
+  50% {
+    transform: translateY(-10px) scale(1.04);
+  }
+}
+
+@keyframes spinSlow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes spinReverseSlow {
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes lightSweep {
+  0% {
+    transform: translateX(-160%) rotate(25deg);
+  }
+  50%,
+  100% {
+    transform: translateX(220%) rotate(25deg);
+  }
+}
+
+@keyframes textShimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes auroraPulse {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.18);
+  }
+}
+
+.animate-float-logo {
+  animation: floatLogo 3.6s ease-in-out infinite;
+}
+
+.animate-spin-slow {
+  animation: spinSlow 10s linear infinite;
+}
+
+.animate-spin-reverse-slow {
+  animation: spinReverseSlow 14s linear infinite;
+}
+
+.animate-light-sweep {
+  animation: lightSweep 3.2s ease-in-out infinite;
+}
+
+.animate-text-shimmer {
+  background-size: 250% auto;
+  animation: textShimmer 4s linear infinite;
+}
+
+.animate-aurora-pulse {
+  animation: auroraPulse 5s ease-in-out infinite;
+}
+
 @media print {
   .no-print {
     display: none !important;

@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { ButadiProvider } from "@/context/ButadiContext";
 import { Navbar } from "@/components/Navbar";
+import { WelcomeScreen } from "@/components/WelcomeScreen";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -26,6 +27,7 @@ export default function RootLayout({
     <html lang="id">
       <body className={`${inter.className} min-h-screen flex flex-col`}>
         <ButadiProvider>
+          <WelcomeScreen />
           <Navbar />
           <main className="flex-1">{children}</main>
           <footer className="bg-[#0F2C59] text-blue-200 border-t border-blue-900/60 py-5 text-xs no-print">
